@@ -4,6 +4,7 @@ from pathlib import Path
 import argparse
 import shutil
 from train_dreambooth import run_training
+from PIL import Image
 
 css = '''
     .instruction{position: absolute; top: 0;right: 0;margin-top: 0px !important}
@@ -11,7 +12,7 @@ css = '''
     #component-4, #component-3, #component-10{min-height: 0}
 '''
 shutil.unpack_archive("mix.zip", "mix")
-model_to_load = "stable-diffusion-v1-5"
+model_to_load = "multimodalart/sd-fine-tunable"
 maximum_concepts = 3
 def swap_values_files(*total_files):
     file_counter = 0
@@ -52,8 +53,22 @@ def train(*inputs):
                 os.makedirs('instance_images',exist_ok=True)
                 files = inputs[i+(maximum_concepts*2)]
                 prompt = inputs[i+maximum_concepts]
-                for j, file in enumerate(files):
-                    shutil.copy(file.name, f'instance_images/{prompt} ({j+1}).jpg')
+                for j, file_temp in enumerate(files):
+                    file = Image.open(file_temp.name)
+                    width, height = file.size
+                    side_length = min(width, height)
+                    left = (width - side_length)/2
+                    top = (height - side_length)/2
+                    right = (width + side_length)/2
+                    bottom = (height + side_length)/2
+                    image = file.crop((left, top, right, bottom))
+                    image = image.resize((512, 512))
+                    extension = file_temp.name.split(".")[1]
+                    if (extension.upper() == "JPG"):
+                        image.save(f'instance_images/{prompt}_({j+1}).jpg', format="JPEG", quality = 100)
+                    else:
+                        image.save(f'instance_images/{prompt}_({j+1}).jpg', format=extension.upper())
+                    #shutil.copy(file.name, )
                     file_counter += 1
     
     uses_custom = inputs[-1] 
@@ -145,6 +160,8 @@ def train(*inputs):
     
     run_training(args_general)
     os.rmdir('instance_images')
+    shutil.make_archive("output_model.zip", 'zip', "output_model")
+    return gr.update(visible=True, value="output_model.zip")
 with gr.Blocks(css=css) as demo:
     with gr.Box():
         # You can remove this part here for your local clone
@@ -219,11 +236,12 @@ with gr.Blocks(css=css) as demo:
         gr.Markdown("If not checked, the number of steps and % of frozen encoder will be tuned automatically according to the amount of images you upload and whether you are training an `object`, `person` or `style`.")
         steps = gr.Number(label="How many steps", value=800)
         perc_txt_encoder = gr.Number(label="Percentage of the training steps the text-encoder should be trained as well", value=30)
-    
+
     #for file in file_collection:
     #    file.change(fn=swap_values_files, inputs=file_collection, outputs=[steps])
 
     type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder])
     train_btn = gr.Button("Start Training")
-    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[])
+    result = gr.File(label="Uploaded model")
+    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result])
 demo.launch()
