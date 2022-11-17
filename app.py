@@ -68,6 +68,7 @@ def train(*inputs):
                     image.save(f'instance_images/{prompt}_({j+1}).jpg', format="JPEG", quality = 100)
                     file_counter += 1
     
+    os.makedirs('output_model',exist_ok=True)
     uses_custom = inputs[-1] 
     type_of_thing = inputs[-4]
     if(uses_custom):
@@ -240,6 +241,16 @@ with gr.Blocks(css=css) as demo:
 
     type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder])
     train_btn = gr.Button("Start Training")
-    result = gr.File(label="Download the uploaded models")
-    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result])
+    with gr.Box(visible=False) as try_your_model:
+        gr.Markdown("Try your model")
+        with gr.Row():
+            prompt = gr.Textbox(label="Type your prompt")
+            result = gr.Image()
+        generate_button = gr.Button("Generate Image")
+    with gr.Box(visible=False) as push_to_hub:
+        gr.Markdown("Push to Hugging Face Hub")
+        model_repo_tag = gr.Textbox(label="Model name or URL", placeholder="username/model_name")
+        push_button = gr.Button("Push to the Hub")
+    result = gr.File(label="Download the uploaded models (zip file are diffusers weights, *.ckpt are CompVis/AUTOMATIC1111 weights)", visible=False)
+    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub])
 demo.launch()
