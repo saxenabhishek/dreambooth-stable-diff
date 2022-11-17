@@ -159,7 +159,7 @@ def train(*inputs):
     shutil.rmtree('instance_images')
     shutil.make_archive("output_model", 'zip', "output_model")
     shutil.rmtree("output_model")
-    return gr.update(visible=True, value="output_model.zip")
+    return [gr.update(visible=True, value="output_model.zip"), gr.update(visible=True), gr.update(visible=True)]
 
 with gr.Blocks(css=css) as demo:
     with gr.Box():
