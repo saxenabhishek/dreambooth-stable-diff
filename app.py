@@ -86,17 +86,41 @@ def train(*inputs):
                 lr_warmup_steps=0,
                 max_train_steps=Training_Steps,
                 num_class_images=200
-        )
+            )
+            args_unet = argparse.Namespace(
+                image_captions_filename = True,
+                train_only_unet=True,
+                Session_dir="output_model",
+                save_starting_step=0,
+                save_n_steps=0,
+                pretrained_model_name_or_path="./stable-diffusion-v1-5",
+                instance_data_dir="instance_images",
+                output_dir="output_model",
+                instance_prompt="",
+                seed=42,
+                resolution=512,
+                mixed_precision="fp16",
+                train_batch_size=1,
+                gradient_accumulation_steps=1,
+                gradient_checkpointing=False,
+                use_8bit_adam=True,
+                learning_rate=2e-6,
+                lr_scheduler="polynomial",
+                lr_warmup_steps=0,
+                max_train_steps=Training_Steps
+            )
+            run_training(args_txt_encoder)
+            run_training(args_unet)
         elif(inputs[-4] == "object"):
             class_data_dir = None
         elif(inputs[-4] == "style"):
             class_data_dir = None
 
-    args = argparse.Namespace(
+    args_general = argparse.Namespace(
         image_captions_filename = True,
         train_text_encoder = True,
         stop_text_encoder_training = stptxt,
-        save_n_steps = 0
+        save_n_steps = 0,
         dump_only_text_encoder = True,
         pretrained_model_name_or_path = "./stable-diffusion-v1-5",
         instance_data_dir="instance_images",
@@ -114,7 +138,7 @@ def train(*inputs):
         lr_warmup_steps = 0,
         max_train_steps=Training_Steps,     
     )
-    run_training(args)
+    run_training(args_general)
     os.rmdir('instance_images')
 with gr.Blocks(css=css) as demo:
     with gr.Box():
