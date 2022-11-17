@@ -64,11 +64,7 @@ def train(*inputs):
                     image = file.crop((left, top, right, bottom))
                     image = image.resize((512, 512))
                     extension = file_temp.name.split(".")[1]
-                    if (extension.upper() == "JPG"):
-                        image.save(f'instance_images/{prompt}_({j+1}).jpg', format="JPEG", quality = 100)
-                    else:
-                        image.save(f'instance_images/{prompt}_({j+1}).{extension}', format=extension.upper())
-                    #shutil.copy(file.name, )
+                    image.save(f'instance_images/{prompt}_({j+1}).jpg', format="JPEG", quality = 100)
                     file_counter += 1
     
     uses_custom = inputs[-1] 
