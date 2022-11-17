@@ -11,4 +11,4 @@ triton==2.0.0.dev20220701
 bitsandbytes
 torch
 torchvision
-https://github.com/TheLastBen/fast-stable-diffusion/raw/main/precompiled/T4/xformers-0.0.13.dev0-py3-none-any.whl
+git+https://github.com/facebookresearch/xformers@7e4c02c#egg=xformers
