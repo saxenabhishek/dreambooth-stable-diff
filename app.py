@@ -238,6 +238,6 @@ with gr.Blocks(css=css) as demo:
 
     type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder])
     train_btn = gr.Button("Start Training")
-    result = gr.File(label="Uploaded model")
+    result = gr.File(label="Download the uploaded models")
     train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result])
 demo.launch()
