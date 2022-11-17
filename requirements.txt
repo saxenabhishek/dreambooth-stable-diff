@@ -10,4 +10,5 @@ pyfiglet
 triton
 bitsandbytes
 torch
+torchvision
 https://github.com/TheLastBen/fast-stable-diffusion/raw/main/precompiled/T4/xformers-0.0.13.dev0-py3-none-any.whl
