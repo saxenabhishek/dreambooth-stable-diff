@@ -64,6 +64,7 @@ def train(*inputs):
                     image = file.crop((left, top, right, bottom))
                     image = image.resize((512, 512))
                     extension = file_temp.name.split(".")[1]
+                    image.convert('RGB')
                     image.save(f'instance_images/{prompt}_({j+1}).jpg', format="JPEG", quality = 100)
                     file_counter += 1
     
