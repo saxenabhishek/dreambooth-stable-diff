@@ -7,7 +7,7 @@ huggingface_hub
 ftfy
 transformers
 pyfiglet
-triton
+triton==2.0.0.dev20220701
 bitsandbytes
 torch
 torchvision
