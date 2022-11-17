@@ -33,7 +33,7 @@ def parse_args():
         "--pretrained_model_name_or_path",
         type=str,
         default=None,
-        required=True,
+        #required=True,
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(
@@ -46,7 +46,7 @@ def parse_args():
         "--instance_data_dir",
         type=str,
         default=None,
-        required=True,
+        #required=True,
         help="A folder containing the training data of instance images.",
     )
     parser.add_argument(
@@ -250,14 +250,14 @@ def parse_args():
     if env_local_rank != -1 and env_local_rank != args.local_rank:
         args.local_rank = env_local_rank
 
-    if args.instance_data_dir is None:
-        raise ValueError("You must specify a train data directory.")
+    #if args.instance_data_dir is None:
+    #    raise ValueError("You must specify a train data directory.")
 
-    if args.with_prior_preservation:
-        if args.class_data_dir is None:
-            raise ValueError("You must specify a data directory for class images.")
-        if args.class_prompt is None:
-            raise ValueError("You must specify prompt for class images.")
+    #if args.with_prior_preservation:
+    #    if args.class_data_dir is None:
+    #        raise ValueError("You must specify a data directory for class images.")
+    #    if args.class_prompt is None:
+    #        raise ValueError("You must specify prompt for class images.")
 
     return args
 
@@ -388,9 +388,39 @@ def get_full_repo_name(model_id: str, organization: Optional[str] = None, token:
     else:
         return f"{organization}/{model_id}"
 
+def merge_two_dicts(starting_dict: dict, updater_dict: dict) -> dict:
+    """
+    Starts from base starting dict and then adds the remaining key values from updater replacing the values from
+    the first starting/base dict with the second updater dict.
 
-def run_training(args):
-    #args = parse_args()
+    For later: how does d = {**d1, **d2} replace collision?
+
+    :param starting_dict:
+    :param updater_dict:
+    :return:
+    """
+    new_dict: dict = starting_dict.copy()   # start with keys and values of starting_dict
+    new_dict.update(updater_dict)    # modifies starting_dict with keys and values of updater_dict
+    return new_dict
+
+def merge_args(args1: argparse.Namespace, args2: argparse.Namespace) -> argparse.Namespace:
+    """
+
+    ref: https://stackoverflow.com/questions/56136549/how-can-i-merge-two-argparse-namespaces-in-python-2-x
+    :param args1:
+    :param args2:
+    :return:
+    """
+    # - the merged args
+    # The vars() function returns the __dict__ attribute to values of the given object e.g {field:value}.
+    merged_key_values_for_namespace: dict = merge_two_dicts(vars(args1), vars(args2))
+    args = argparse.Namespace(**merged_key_values_for_namespace)
+    return args
+
+def run_training(args_imported):
+    args_default = parse_args()
+    args = merge_args(args_default, args_imported)
+    print(args)
     logging_dir = Path(args.output_dir, args.logging_dir)
     i=args.save_starting_step
     accelerator = Accelerator(
@@ -468,7 +498,7 @@ def run_training(args):
     if args.tokenizer_name:
         tokenizer = CLIPTokenizer.from_pretrained(args.tokenizer_name)
     elif args.pretrained_model_name_or_path:
-        tokenizer = CLIPTokenizer.from_pretrained(args.pretrained_model_name_or_path, subfolder="tokenizer")
+        tokenizer = CLIPTokenizer.from_pretrained(args.pretrained_model_name_or_path, subfolder="tokenizer", use_auth_token=True)
 
     # Load models and create wrapper for stable diffusion
     if args.train_only_unet:

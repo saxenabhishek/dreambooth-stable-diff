@@ -11,6 +11,7 @@ css = '''
     #component-4, #component-3, #component-10{min-height: 0}
 '''
 shutil.unpack_archive("mix.zip", "mix")
+model_to_load = "stable-diffusion-v1-5"
 maximum_concepts = 3
 def swap_values_files(*total_files):
     file_counter = 0
@@ -59,15 +60,15 @@ def train(*inputs):
     if(uses_custom):
         Training_Steps = int(inputs[-3])
         Train_text_encoder_for = int(inputs[-2])
-        stptxt = int((Training_Steps*Train_text_encoder_for)/100)
     else:
         Training_Steps = file_counter*200
         if(inputs[-4] == "person"):
             class_data_dir = "mix"
+            Train_text_encoder_for=100
             args_txt_encoder = argparse.Namespace(
                 image_captions_filename = True,
                 train_text_encoder = True,
-                pretrained_model_name_or_path="./stable-diffusion-v1-5",
+                pretrained_model_name_or_path=model_to_load,
                 instance_data_dir="instance_images",
                 class_data_dir=class_data_dir,
                 output_dir="output_model",
@@ -93,7 +94,7 @@ def train(*inputs):
                 Session_dir="output_model",
                 save_starting_step=0,
                 save_n_steps=0,
-                pretrained_model_name_or_path="./stable-diffusion-v1-5",
+                pretrained_model_name_or_path=model_to_load,
                 instance_data_dir="instance_images",
                 output_dir="output_model",
                 instance_prompt="",
@@ -112,17 +113,20 @@ def train(*inputs):
             run_training(args_txt_encoder)
             run_training(args_unet)
         elif(inputs[-4] == "object"):
+            Train_text_encoder_for=30
             class_data_dir = None
         elif(inputs[-4] == "style"):
+            Train_text_encoder_for=15
             class_data_dir = None
-
+            
+    stptxt = int((Training_Steps*Train_text_encoder_for)/100)
     args_general = argparse.Namespace(
         image_captions_filename = True,
         train_text_encoder = True,
         stop_text_encoder_training = stptxt,
         save_n_steps = 0,
         dump_only_text_encoder = True,
-        pretrained_model_name_or_path = "./stable-diffusion-v1-5",
+        pretrained_model_name_or_path = model_to_load,
         instance_data_dir="instance_images",
         class_data_dir=class_data_dir,
         output_dir="output_model",
@@ -138,6 +142,7 @@ def train(*inputs):
         lr_warmup_steps = 0,
         max_train_steps=Training_Steps,     
     )
+    
     run_training(args_general)
     os.rmdir('instance_images')
 with gr.Blocks(css=css) as demo:
