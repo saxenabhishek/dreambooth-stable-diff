@@ -76,7 +76,7 @@ def train(*inputs):
         Train_text_encoder_for = int(inputs[-2])
     else:
         Training_Steps = file_counter*200
-        if(type_of_thing == "person"):
+    if(type_of_thing == "person"):
             class_data_dir = "mix"
             Train_text_encoder_for=100
             args_txt_encoder = argparse.Namespace(
@@ -126,7 +126,7 @@ def train(*inputs):
             )
             run_training(args_txt_encoder)
             run_training(args_unet)
-        elif(type_of_thing == "object" or type_of_thing == "style"):
+    elif(type_of_thing == "object" or type_of_thing == "style"):
             if(type_of_thing == "object"):
                 Train_text_encoder_for=30
             elif(type_of_thing == "style"):
