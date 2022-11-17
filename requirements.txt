@@ -12,4 +12,4 @@ transformers
 pyfiglet
 triton==2.0.0.dev20220701
 bitsandbytes
-https://github.com/TheLastBen/fast-stable-diffusion/raw/main/precompiled/T4/xformers-0.0.13.dev0-py3-none-any.whl
+xformers-0.0.14.dev0-cp38-cp38-linux_x86_64_t4.whl
