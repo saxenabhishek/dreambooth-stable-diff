@@ -67,7 +67,7 @@ def train(*inputs):
                     if (extension.upper() == "JPG"):
                         image.save(f'instance_images/{prompt}_({j+1}).jpg', format="JPEG", quality = 100)
                     else:
-                        image.save(f'instance_images/{prompt}_({j+1}).jpg', format=extension.upper())
+                        image.save(f'instance_images/{prompt}_({j+1}).{extension}', format=extension.upper())
                     #shutil.copy(file.name, )
                     file_counter += 1
     
