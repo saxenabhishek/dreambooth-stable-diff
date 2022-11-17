@@ -9,6 +9,6 @@ transformers
 pyfiglet
 triton==2.0.0.dev20220701
 bitsandbytes
+git+https://github.com/facebookresearch/xformers@7e4c02c#egg=xformers
 torch
 torchvision
-git+https://github.com/facebookresearch/xformers@7e4c02c#egg=xformers
