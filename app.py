@@ -69,12 +69,13 @@ def train(*inputs):
                     file_counter += 1
     
     uses_custom = inputs[-1] 
+    type_of_thing = inputs[-4]
     if(uses_custom):
         Training_Steps = int(inputs[-3])
         Train_text_encoder_for = int(inputs[-2])
     else:
         Training_Steps = file_counter*200
-        if(inputs[-4] == "person"):
+        if(type_of_thing == "person"):
             class_data_dir = "mix"
             Train_text_encoder_for=100
             args_txt_encoder = argparse.Namespace(
@@ -124,41 +125,41 @@ def train(*inputs):
             )
             run_training(args_txt_encoder)
             run_training(args_unet)
-        elif(inputs[-4] == "object"):
-            Train_text_encoder_for=30
+        elif(type_of_thing == "object" or type_of_thing == "style"):
+            if(type_of_thing == "object"):
+                Train_text_encoder_for=30
+            elif(type_of_thing == "style"):
+                Train_text_encoder_for=15
             class_data_dir = None
-        elif(inputs[-4] == "style"):
-            Train_text_encoder_for=15
-            class_data_dir = None
-            
-    stptxt = int((Training_Steps*Train_text_encoder_for)/100)
-    args_general = argparse.Namespace(
-        image_captions_filename = True,
-        train_text_encoder = True,
-        stop_text_encoder_training = stptxt,
-        save_n_steps = 0,
-        dump_only_text_encoder = True,
-        pretrained_model_name_or_path = model_to_load,
-        instance_data_dir="instance_images",
-        class_data_dir=class_data_dir,
-        output_dir="output_model",
-        instance_prompt="",
-        seed=42,
-        resolution=512,
-        mixed_precision="fp16",
-        train_batch_size=1,
-        gradient_accumulation_steps=1,
-        use_8bit_adam=True,
-        learning_rate=2e-6,
-        lr_scheduler="polynomial",
-        lr_warmup_steps = 0,
-        max_train_steps=Training_Steps,     
-    )
-    
-    run_training(args_general)
-    os.rmdir('instance_images')
-    shutil.make_archive("output_model.zip", 'zip', "output_model")
+            stptxt = int((Training_Steps*Train_text_encoder_for)/100)
+            args_general = argparse.Namespace(
+                image_captions_filename = True,
+                train_text_encoder = True,
+                stop_text_encoder_training = stptxt,
+                save_n_steps = 0,
+                pretrained_model_name_or_path = model_to_load,
+                instance_data_dir="instance_images",
+                class_data_dir=class_data_dir,
+                output_dir="output_model",
+                instance_prompt="",
+                seed=42,
+                resolution=512,
+                mixed_precision="fp16",
+                train_batch_size=1,
+                gradient_accumulation_steps=1,
+                use_8bit_adam=True,
+                learning_rate=2e-6,
+                lr_scheduler="polynomial",
+                lr_warmup_steps = 0,
+                max_train_steps=Training_Steps,     
+            )
+            run_training(args_general)
+
+    shutil.rmtree('instance_images')
+    shutil.make_archive("output_model", 'zip', "output_model")
+    shutil.rmtree("output_model")
     return gr.update(visible=True, value="output_model.zip")
+
 with gr.Blocks(css=css) as demo:
     with gr.Box():
         # You can remove this part here for your local clone
