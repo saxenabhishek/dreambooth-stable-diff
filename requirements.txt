@@ -12,4 +12,4 @@ transformers
 pyfiglet
 triton==2.0.0.dev20220701
 bitsandbytes
-https://github.com/apolinario/xformers/releases/download/0.0.1/xformers-0.0.15.dev0+c101579.d20221118-cp38-cp38-linux_x86_64.whl
+https://github.com/apolinario/xformers/releases/download/0.0.1/xformers-0.0.14.dev0-cp38-cp38-linux_x86_64.whl
