@@ -16,7 +16,8 @@ css = '''
 '''
 model_to_load = "multimodalart/sd-fine-tunable"
 maximum_concepts = 3
-
+#Pre download the files even if we don't use it here
+StableDiffusionPipeline.from_pretrained(model_to_load)
 def swap_text(option):
     mandatory_liability = "You must have the right to do so and you are liable for the images you use, example:"
     if(option == "object"):
