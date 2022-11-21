@@ -51,6 +51,7 @@ def count_files(*inputs):
             Training_Steps = file_counter*200
     return(gr.update(visible=True, value=f"You are going to train {file_counter} files for {Training_Steps} steps. This should take around {round(Training_Steps/1.5, 2)} seconds, or {round((Training_Steps/1.5)/3600, 2)}. The T4 GPU costs US$0.60 for 1h, so the estimated costs for this training run should be {round(((Training_Steps/1.5)/3600)*0.6, 2)}"))
 def train(*inputs):
+
     if os.path.exists("diffusers_model.zip"): os.remove("diffusers_model.zip")
     if os.path.exists("model.ckpt"): os.remove("model.ckpt")
     file_counter = 0
@@ -263,11 +264,10 @@ with gr.Blocks(css=css) as demo:
         steps = gr.Number(label="How many steps", value=800)
         perc_txt_encoder = gr.Number(label="Percentage of the training steps the text-encoder should be trained as well", value=30)
 
-    for file in file_collection:
-        file.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary])
-
     type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder], queue=False)
     training_summary = gr.Textbox("", visible=False, label="Training Summary")
+    for file in file_collection:
+        file.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary])
     train_btn = gr.Button("Start Training")
     with gr.Box(visible=False) as try_your_model:
         gr.Markdown("Try your model")
