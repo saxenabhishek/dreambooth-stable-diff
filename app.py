@@ -9,6 +9,7 @@ from PIL import Image
 from slugify import slugify
 import requests
 import torch
+import zipfile
 from diffusers import StableDiffusionPipeline
 
 css = '''
@@ -20,6 +21,15 @@ model_to_load = "multimodalart/sd-fine-tunable"
 maximum_concepts = 3
 #Pre download the files even if we don't use it here
 StableDiffusionPipeline.from_pretrained(model_to_load)
+
+def zipdir(path, ziph):
+    # ziph is zipfile handle
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            ziph.write(os.path.join(root, file), 
+                       os.path.relpath(os.path.join(root, file), 
+                                       os.path.join(path, '..')))
+
 def swap_text(option):
     mandatory_liability = "You must have the right to do so and you are liable for the images you use, example:"
     if(option == "object"):
@@ -128,7 +138,9 @@ def train(*inputs):
     torch.cuda.empty_cache()
     #convert("output_model", "model.ckpt")
     #shutil.rmtree('instance_images')
-    shutil.make_archive("diffusers_model", 'zip', "output_model")
+    #shutil.make_archive("diffusers_model", 'zip', "output_model")
+    with zipfile.ZipFile('diffusers_model.zip', 'w', zipfile.ZIP_DEFLATED) as zipf:
+        zipdir('output_model/', zipf)
     torch.cuda.empty_cache()
     return [gr.update(visible=True, value=["diffusers_model.zip"]), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)]
 
@@ -153,7 +165,7 @@ def push(model_name, where_to_upload, hf_token):
     else:
         model_id = f"sd-dreambooth-library/{model_name_slug}"
         headers = {"Authorization" : f"Bearer: {hf_token}", "Content-Type": "application/json"}
-        response = requests.post("https://example.com/get-my-account-detail", headers=headers)
+        response = requests.post("https://huggingface.co/organizations/sd-dreambooth-library/share/SSeOwppVCscfTEzFGQaqpfcjukVeNrKNHX", headers=headers)
     
     images_upload = os.listdir("instance_images")
     image_string = ""
@@ -167,10 +179,8 @@ def push(model_name, where_to_upload, hf_token):
         else:
             title_instance_prompt_string = ''
         previous_instance_prompt = instance_prompt
-        image_string = f'''
-    {title_instance_prompt_string}
-    {image_string}![{instance_prompt} {i}](https://huggingface.co/{model_name_slug}/resolve/main/sample_images/{image})
-        '''
+        image_string = f'''{title_instance_prompt_string}
+{image_string}![{instance_prompt} {i}](https://huggingface.co/{model_name_slug}/resolve/main/sample_images/{image})'''
     readme_text = f'''---
 license: creativeml-openrail-m
 tags:
@@ -191,6 +201,7 @@ Sample pictures of this concept:
     text_file = open("token_identifier.txt", "w")
     text_file.write(', '.join(instance_prompt_list))
     text_file.close()
+    create_repo(model_id,private=True, token=hf_token)
     operations = [
         CommitOperationAdd(path_in_repo="token_identifier.txt", path_or_fileobj="token_identifier.txt"),
         CommitOperationAdd(path_in_repo="README.md", path_or_fileobj="README.md"),
@@ -218,7 +229,7 @@ Sample pictures of this concept:
 def convert_to_ckpt():
     convert("output_model", "model.ckpt")
     return gr.update(visible=True, value=["diffusers_model.zip", "model.ckpt"])
-   
+
 with gr.Blocks(css=css) as demo:
     with gr.Box():
         if "IS_SHARED_UI" in os.environ:
