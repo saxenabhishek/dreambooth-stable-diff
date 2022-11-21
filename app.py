@@ -174,7 +174,7 @@ def generate(prompt):
     image = pipe(prompt).images[0]  
     return(image)
     
-def push_button(path):
+def push(path):
     pass
 
 with gr.Blocks(css=css) as demo:
@@ -267,5 +267,5 @@ with gr.Blocks(css=css) as demo:
     result = gr.File(label="Download the uploaded models (zip file are diffusers weights, *.ckpt are CompVis/AUTOMATIC1111 weights)", visible=True)
     train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub])
     generate_button.click(fn=generate, inputs=prompt, outputs=result)
-    push_button.click(fn=push_to_hub, inputs=model_repo_tag, outputs=[])
+    push_button.click(fn=push, inputs=model_repo_tag, outputs=[])
 demo.launch()
