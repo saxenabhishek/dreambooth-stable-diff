@@ -180,7 +180,7 @@ def push(model_name, where_to_upload, hf_token):
             title_instance_prompt_string = ''
         previous_instance_prompt = instance_prompt
         image_string = f'''{title_instance_prompt_string}
-{image_string}![{instance_prompt} {i}](https://huggingface.co/{model_name_slug}/resolve/main/sample_images/{image})'''
+{image_string}![{instance_prompt} {i}](https://huggingface.co/{model_id}/resolve/main/sample_images/{image})'''
     readme_text = f'''---
 license: creativeml-openrail-m
 tags:
