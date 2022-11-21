@@ -252,7 +252,7 @@ with gr.Blocks(css=css) as demo:
     #for file in file_collection:
     #    file.change(fn=swap_values_files, inputs=file_collection, outputs=[steps])
 
-    type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder])
+    type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder], queue=False)
     train_btn = gr.Button("Start Training")
     with gr.Box(visible=False) as try_your_model:
         gr.Markdown("Try your model")
