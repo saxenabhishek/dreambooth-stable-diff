@@ -4,6 +4,7 @@ from pathlib import Path
 import argparse
 import shutil
 from train_dreambooth import run_training
+from converttosd import convert
 from PIL import Image
 import torch
 
@@ -47,6 +48,8 @@ def swap_text(option):
         return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your files with a unique word that represent your concept (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for]
 
 def train(*inputs):
+    if os.path.exists("diffusers_model.zip"): os.remove("diffusers_model.zip")
+    if os.path.exists("model.ckpt"): os.remove("model.ckpt")
     file_counter = 0
     for i, input in enumerate(inputs):
         if(i < maximum_concepts-1):
@@ -156,12 +159,23 @@ def train(*inputs):
                 max_train_steps=Training_Steps,     
             )
             run_training(args_general)
-
+    convert("output_model", "model.ckpt")
     shutil.rmtree('instance_images')
-    shutil.make_archive("output_model", 'zip', "output_model")
+    shutil.make_archive("diffusers_model", 'zip', "output_model")
     shutil.rmtree("output_model")
     torch.cuda.empty_cache()
-    return [gr.update(visible=True, value="output_model.zip"), gr.update(visible=True), gr.update(visible=True)]
+    return [gr.update(visible=True, value=["diffusers_model.zip", "model.ckpt"]), gr.update(visible=True), gr.update(visible=True)]
+
+def generate(prompt):
+    from diffusers import StableDiffusionPipeline
+    
+    pipe = StableDiffusionPipeline.from_pretrained("./output_model", torch_dtype=torch.float16)
+    pipe = pipe.to("cuda")
+    image = pipe(prompt).images[0]  
+    return(image)
+    
+def push_button(path):
+    pass
 
 with gr.Blocks(css=css) as demo:
     with gr.Box():
@@ -252,4 +266,6 @@ with gr.Blocks(css=css) as demo:
         push_button = gr.Button("Push to the Hub")
     result = gr.File(label="Download the uploaded models (zip file are diffusers weights, *.ckpt are CompVis/AUTOMATIC1111 weights)", visible=True)
     train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub])
+    generate_button.click(fn=generate, inputs=prompt, outputs=result)
+    push_button.click(fn=push_to_hub, inputs=model_repo_tag, outputs=[])
 demo.launch()
