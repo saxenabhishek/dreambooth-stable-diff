@@ -5,6 +5,7 @@ import argparse
 import shutil
 from train_dreambooth import run_training
 from PIL import Image
+import torch
 
 css = '''
     .instruction{position: absolute; top: 0;right: 0;margin-top: 0px !important}
@@ -64,7 +65,7 @@ def train(*inputs):
                     image = file.crop((left, top, right, bottom))
                     image = image.resize((512, 512))
                     extension = file_temp.name.split(".")[1]
-                    image.convert('RGB')
+                    image = image.convert('RGB')
                     image.save(f'instance_images/{prompt}_({j+1}).jpg', format="JPEG", quality = 100)
                     file_counter += 1
     
@@ -159,6 +160,7 @@ def train(*inputs):
     shutil.rmtree('instance_images')
     shutil.make_archive("output_model", 'zip', "output_model")
     shutil.rmtree("output_model")
+    torch.cuda.empty_cache()
     return [gr.update(visible=True, value="output_model.zip"), gr.update(visible=True), gr.update(visible=True)]
 
 with gr.Blocks(css=css) as demo:
@@ -251,6 +253,6 @@ with gr.Blocks(css=css) as demo:
         gr.Markdown("Push to Hugging Face Hub")
         model_repo_tag = gr.Textbox(label="Model name or URL", placeholder="username/model_name")
         push_button = gr.Button("Push to the Hub")
-    result = gr.File(label="Download the uploaded models (zip file are diffusers weights, *.ckpt are CompVis/AUTOMATIC1111 weights)", visible=False)
+    result = gr.File(label="Download the uploaded models (zip file are diffusers weights, *.ckpt are CompVis/AUTOMATIC1111 weights)", visible=True)
     train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub])
 demo.launch()
