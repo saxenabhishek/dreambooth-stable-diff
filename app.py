@@ -160,11 +160,11 @@ def train(*inputs):
             )
             run_training(args_general)
     torch.cuda.empty_cache()
-    convert("output_model", "model.ckpt")
+    #convert("output_model", "model.ckpt")
     shutil.rmtree('instance_images')
     shutil.make_archive("diffusers_model", 'zip', "output_model")
     torch.cuda.empty_cache()
-    return [gr.update(visible=True, value=["diffusers_model.zip", "model.ckpt"]), gr.update(visible=True), gr.update(visible=True)]
+    return [gr.update(visible=True, value=["diffusers_model.zip"]), gr.update(visible=True), gr.update(visible=True)]
 
 def generate(prompt):
     from diffusers import StableDiffusionPipeline
@@ -177,6 +177,10 @@ def generate(prompt):
 def push(path):
     pass
 
+def convert():
+    convert("output_model", "model.ckpt")
+    return gr.update(visible=True, value=["diffusers_model.zip", "model.ckpt"])
+   
 with gr.Blocks(css=css) as demo:
     with gr.Box():
         if "IS_SHARED_UI" in os.environ:
@@ -264,8 +268,11 @@ with gr.Blocks(css=css) as demo:
         gr.Markdown("Push to Hugging Face Hub")
         model_repo_tag = gr.Textbox(label="Model name or URL", placeholder="username/model_name")
         push_button = gr.Button("Push to the Hub")
-    result = gr.File(label="Download the uploaded models (zip file are diffusers weights, *.ckpt are CompVis/AUTOMATIC1111 weights)", visible=True)
+    result = gr.File(label="Download the uploaded models in the diffusers format (zip file are diffusers weights are CompVis/AUTOMATIC1111 weights)", visible=True)
+    convert_button = gr.Button("Convert to CKPT")
+
     train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub])
     generate_button.click(fn=generate, inputs=prompt, outputs=result)
     push_button.click(fn=push, inputs=model_repo_tag, outputs=[])
+    convert_button.click(fn=convert, inputs=[], outputs=result)
 demo.launch()
