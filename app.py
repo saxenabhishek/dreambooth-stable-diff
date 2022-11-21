@@ -14,7 +14,7 @@ from diffusers import StableDiffusionPipeline
 
 css = '''
     .instruction{position: absolute; top: 0;right: 0;margin-top: 0px !important}
-    .arrow{position: absolute;top: 0;right: -8px;margin-top: -8px !important}
+    .arrow{position: absolute;top: 0;right: -110px;margin-top: -8px !important}
     #component-4, #component-3, #component-10{min-height: 0}
 '''
 model_to_load = "multimodalart/sd-fine-tunable"
