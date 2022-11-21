@@ -36,15 +36,15 @@ def swap_text(option):
     if(option == "object"):
         instance_prompt_example = "cttoy"
         freeze_for = 50
-        return [f"You are going to train `object`(s), upload 5-10 images of each object you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/cat-toy.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here)", freeze_for]
+        return [f"You are going to train `object`(s), upload 5-10 images of each object you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/cat-toy.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for]
     elif(option == "person"):
        instance_prompt_example = "julcto"
        freeze_for = 100
-       return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/cat-toy.png" />''', f"You should name the files with a unique word that represent your concept (like `{instance_prompt_example}` in this example). You can train multiple concepts as well.", freeze_for]
+       return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name the files with a unique word that represent your concept (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for]
     elif(option == "style"):
-        instance_prompt_example = "mspolstyll"
+        instance_prompt_example = "trsldamrl"
         freeze_for = 10
-        return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/cat-toy.png" />''', f"You should name your files with a unique word that represent your concept (as `{instance_prompt_example}` for example). You can train multiple concepts as well.", freeze_for]
+        return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your files with a unique word that represent your concept (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for]
 
 def train(*inputs):
     file_counter = 0
@@ -165,28 +165,25 @@ def train(*inputs):
 
 with gr.Blocks(css=css) as demo:
     with gr.Box():
-        # You can remove this part here for your local clone
-        gr.HTML('''
-            <div class="gr-prose" style="max-width: 80%">
-            <h2>Attention - This Space doesn't work in this shared UI</h2>
-            <p>For it to work, you have to duplicate the Space and run it on your own profile where a (paid) private GPU will be attributed to it during runtime. It will cost you < US$1 to train a model on default settings! 🤑</p> 
-            <img class="instruction" src="file/duplicate.png"> 
-            <img class="arrow" src="file/arrow.png" />
-            </div>
-        ''')
+        if "IS_SHARED_UI" in os.environ:
+            gr.HTML('''
+                <div class="gr-prose" style="max-width: 80%">
+                <h2>Attention - This Space doesn't work in this shared UI</h2>
+                <p>For it to work, you have to duplicate the Space and run it on your own profile where a (paid) private GPU will be attributed to it during runtime. It will cost you < US$1 to train a model on default settings! 🤑</p> 
+                <img class="instruction" src="file/duplicate.png"> 
+                <img class="arrow" src="file/arrow.png" />
+                </div>
+            ''')
     gr.Markdown("# Dreambooth training")
     gr.Markdown("Customize Stable Diffusion by giving it with few-shot examples")
     with gr.Row():
         type_of_thing = gr.Dropdown(label="What would you like to train?", choices=["object", "person", "style"], value="object", interactive=True)
-        #with gr.Column():
-            #with gr.Box():
-            #    gr.Textbox(label="What prompt you would like to train it on", value="The photo of a cttoy", interactive=True).style(container=False, item_container=False)
-            #    gr.Markdown("You should try using words the model doesn't know. Don't use names or well known concepts.")
+       
     with gr.Row():
         with gr.Column():
             thing_description = gr.Markdown("You are going to train an `object`, upload 5-10 images of the object you are planning on training on from different angles/perspectives. You must have the right to do so and you are liable for the images you use")
             thing_image_example = gr.HTML('''<img src="file/cat-toy.png" />''')
-            things_naming = gr.Markdown("For training, you should name the files with a unique word that represent your concept (like `cctoy` in this example). You can train multiple concepts by naming multiple images at once. Images will be automatically cropped to 512x512.")
+            things_naming = gr.Markdown("You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `cttoy` here). Images will be automatically cropped to 512x512.")
         with gr.Column():
             file_collection = []
             concept_collection = []
