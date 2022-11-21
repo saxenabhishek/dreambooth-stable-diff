@@ -16,21 +16,6 @@ css = '''
 shutil.unpack_archive("mix.zip", "mix")
 model_to_load = "multimodalart/sd-fine-tunable"
 maximum_concepts = 3
-def swap_values_files(*total_files):
-    file_counter = 0
-    for files in total_files:
-        if(files):
-            for file in files:
-                filename = Path(file.orig_name).stem
-                pt=''.join([i for i in filename if not i.isdigit()])
-                pt=pt.replace("_"," ")
-                pt=pt.replace("(","")
-                pt=pt.replace(")","")
-                instance_prompt = pt
-                print(instance_prompt)
-                file_counter += 1
-            training_steps = (file_counter*200)
-    return training_steps
 
 def swap_text(option):
     mandatory_liability = "You must have the right to do so and you are liable for the images you use"
@@ -47,6 +32,24 @@ def swap_text(option):
         freeze_for = 10
         return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your files with a unique word that represent your concept (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for]
 
+def count_files(*inputs):
+    file_counter = 0
+    for i, input in enumerate(inputs):
+        if(i < maximum_concepts-1):
+            if(input):
+                files = inputs[i+(maximum_concepts*2)]
+                for j, tile_temp in enumerate(files):
+                    file_counter+= 1
+    uses_custom = inputs[-1] 
+    type_of_thing = inputs[-4]
+    if(uses_custom):
+        Training_Steps = int(inputs[-3])
+    else:
+        if(type_of_thing == "person"):
+            Training_Steps = file_counter*200*2
+        else:
+            Training_Steps = file_counter*200
+    return(gr.update(visible=True, value=f"You are going to train {file_counter} files for {Training_Steps} steps. This should take around {round(Training_Steps/1.5, 2)} seconds, or {round((Training_Steps/1.5)/3600, 2)}. The T4 GPU costs US$0.60 for 1h, so the estimated costs for this training run should be {round(((Training_Steps/1.5)/3600)*0.6, 2)}"))
 def train(*inputs):
     if os.path.exists("diffusers_model.zip"): os.remove("diffusers_model.zip")
     if os.path.exists("model.ckpt"): os.remove("model.ckpt")
@@ -164,7 +167,7 @@ def train(*inputs):
     shutil.rmtree('instance_images')
     shutil.make_archive("diffusers_model", 'zip', "output_model")
     torch.cuda.empty_cache()
-    return [gr.update(visible=True, value=["diffusers_model.zip"]), gr.update(visible=True), gr.update(visible=True)]
+    return [gr.update(visible=True, value=["diffusers_model.zip"]), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)]
 
 def generate(prompt):
     from diffusers import StableDiffusionPipeline
@@ -177,7 +180,7 @@ def generate(prompt):
 def push(path):
     pass
 
-def convert():
+def convert_to_ckpt():
     convert("output_model", "model.ckpt")
     return gr.update(visible=True, value=["diffusers_model.zip", "model.ckpt"])
    
@@ -192,6 +195,13 @@ with gr.Blocks(css=css) as demo:
                 <img class="arrow" src="file/arrow.png" />
                 </div>
             ''')
+        else:
+            gr.HTML('''
+                <div class="gr-prose" style="max-width: 80%">
+                <h2>You have successfully cloned the Dreambooth Training Space</h2>
+                <p><a href="#">Now you can attribute a T4 GPU to it</a> (by going to the Settings tab) and run the training below. The GPU will be automatically unassigned after training is over. So you will be billed by the minute between when you activate the GPU and when it finishes training.</p> 
+                </div>
+            ''')    
     gr.Markdown("# Dreambooth training")
     gr.Markdown("Customize Stable Diffusion by giving it with few-shot examples")
     with gr.Row():
@@ -253,10 +263,11 @@ with gr.Blocks(css=css) as demo:
         steps = gr.Number(label="How many steps", value=800)
         perc_txt_encoder = gr.Number(label="Percentage of the training steps the text-encoder should be trained as well", value=30)
 
-    #for file in file_collection:
-    #    file.change(fn=swap_values_files, inputs=file_collection, outputs=[steps])
+    for file in file_collection:
+        file.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary])
 
     type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder], queue=False)
+    training_summary = gr.Textbox("", visible=False, label="Training Summary")
     train_btn = gr.Button("Start Training")
     with gr.Box(visible=False) as try_your_model:
         gr.Markdown("Try your model")
@@ -268,11 +279,11 @@ with gr.Blocks(css=css) as demo:
         gr.Markdown("Push to Hugging Face Hub")
         model_repo_tag = gr.Textbox(label="Model name or URL", placeholder="username/model_name")
         push_button = gr.Button("Push to the Hub")
-    result = gr.File(label="Download the uploaded models in the diffusers format (zip file are diffusers weights are CompVis/AUTOMATIC1111 weights)", visible=True)
-    convert_button = gr.Button("Convert to CKPT")
+    result = gr.File(label="Download the uploaded models in the diffusers format", visible=True)
+    convert_button = gr.Button("Convert to CKPT", visible=False)
 
-    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub])
+    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button])
     generate_button.click(fn=generate, inputs=prompt, outputs=result)
     push_button.click(fn=push, inputs=model_repo_tag, outputs=[])
-    convert_button.click(fn=convert, inputs=[], outputs=result)
+    convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result)
 demo.launch()
