@@ -159,10 +159,10 @@ def train(*inputs):
                 max_train_steps=Training_Steps,     
             )
             run_training(args_general)
+    torch.cuda.empty_cache()
     convert("output_model", "model.ckpt")
     shutil.rmtree('instance_images')
     shutil.make_archive("diffusers_model", 'zip', "output_model")
-    #shutil.rmtree("output_model")
     torch.cuda.empty_cache()
     return [gr.update(visible=True, value=["diffusers_model.zip", "model.ckpt"]), gr.update(visible=True), gr.update(visible=True)]
 
