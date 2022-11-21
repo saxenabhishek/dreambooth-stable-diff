@@ -285,7 +285,7 @@ with gr.Blocks(css=css) as demo:
             counter_delete = 1
             for delete_button in delete_collection:
                 if(counter_delete < len(delete_collection)+1):
-                    delete_button.click(lambda:[gr.update(visible=False),gr.update(visible=False), gr.update(visible=True), False], None, [file_collection[counter_delete], row[counter_delete], buttons_collection[counter_delete-1], is_visible[counter_delete]]), queue=False
+                    delete_button.click(lambda:[gr.update(visible=False),gr.update(visible=False), gr.update(visible=True), False], None, [file_collection[counter_delete], row[counter_delete], buttons_collection[counter_delete-1], is_visible[counter_delete]], queue=False)
                 counter_delete += 1
             
             
