@@ -9,6 +9,8 @@ from PIL import Image
 from slugify import slugify
 import requests
 import torch
+from diffusers import StableDiffusionPipeline
+
 css = '''
     .instruction{position: absolute; top: 0;right: 0;margin-top: 0px !important}
     .arrow{position: absolute;top: 0;right: -8px;margin-top: -8px !important}
