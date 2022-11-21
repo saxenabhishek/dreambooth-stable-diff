@@ -4,7 +4,7 @@ from pathlib import Path
 import argparse
 import shutil
 from train_dreambooth import run_training
-from converttosd import convert
+from convertosd import convert
 from PIL import Image
 import torch
 
