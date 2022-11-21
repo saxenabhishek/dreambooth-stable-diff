@@ -18,7 +18,7 @@ model_to_load = "multimodalart/sd-fine-tunable"
 maximum_concepts = 3
 
 def swap_text(option):
-    mandatory_liability = "You must have the right to do so and you are liable for the images you use"
+    mandatory_liability = "You must have the right to do so and you are liable for the images you use, example:"
     if(option == "object"):
         instance_prompt_example = "cttoy"
         freeze_for = 50
@@ -222,7 +222,7 @@ with gr.Blocks(css=css) as demo:
             gr.HTML('''
                 <div class="gr-prose" style="max-width: 80%">
                 <h2>Attention - This Space doesn't work in this shared UI</h2>
-                <p>For it to work, you have to duplicate the Space and run it on your own profile where a (paid) private GPU will be attributed to it during runtime. It will cost you < US$1 to train a model on default settings! 🤑</p> 
+                <p>For it to work, you have to duplicate the Space and run it on your own profile where a (paid) private GPU will be attributed to it during runtime. As each T4 costs US$0,60/h, it should cost you < US$1 to train a model with less than 100 images on default settings! 🤑</p> 
                 <img class="instruction" src="file/duplicate.png"> 
                 <img class="arrow" src="file/arrow.png" />
                 </div>
@@ -231,7 +231,7 @@ with gr.Blocks(css=css) as demo:
             gr.HTML('''
                 <div class="gr-prose" style="max-width: 80%">
                 <h2>You have successfully cloned the Dreambooth Training Space</h2>
-                <p>If you haven't already, attribute a T4 GPU to it (via the Settings tab) and run the training below. You will be billed by the minute between when you activate the GPU until when you turn it off.</p> 
+                <p>If you haven't already, attribute a T4 GPU to it (via the Settings tab) and run the training below. You will be billed by the minute from when you activate the GPU until when you turn it off.</p> 
                 </div>
             ''')    
     gr.Markdown("# Dreambooth training")
@@ -241,7 +241,7 @@ with gr.Blocks(css=css) as demo:
        
     with gr.Row():
         with gr.Column():
-            thing_description = gr.Markdown("You are going to train an `object`, upload 5-10 images of the object you are planning on training on from different angles/perspectives. You must have the right to do so and you are liable for the images you use")
+            thing_description = gr.Markdown("You are going to train an `object`, upload 5-10 images of the object you are planning on training on from different angles/perspectives. You must have the right to do so and you are liable for the images you use, example:")
             thing_image_example = gr.HTML('''<img src="file/cat-toy.png" />''')
             things_naming = gr.Markdown("You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `cttoy` here). Images will be automatically cropped to 512x512.")
         with gr.Column():
