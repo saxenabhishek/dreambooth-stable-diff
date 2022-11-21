@@ -195,12 +195,7 @@ def convert_text_enc_state_dict(text_enc_dict):
     return text_enc_dict
 
 
-if __name__ == "__main__":
-    
-
-    model_path = ""
-    checkpoint_path= ""
-    
+def convert(model_path, checkpoint_path):    
     unet_path = osp.join(model_path, "unet", "diffusion_pytorch_model.bin")
     vae_path = osp.join(model_path, "vae", "diffusion_pytorch_model.bin")
     text_enc_path = osp.join(model_path, "text_encoder", "pytorch_model.bin")
