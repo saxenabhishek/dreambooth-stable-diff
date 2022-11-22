@@ -10,6 +10,7 @@ from slugify import slugify
 import requests
 import torch
 import zipfile
+import urllib.parse
 from diffusers import StableDiffusionPipeline
 
 css = '''
@@ -180,7 +181,7 @@ def push(model_name, where_to_upload, hf_token):
             title_instance_prompt_string = ''
         previous_instance_prompt = instance_prompt
         image_string = f'''{title_instance_prompt_string}
-{image_string}![{instance_prompt} {i}](https://huggingface.co/{model_id}/resolve/main/concept_images/{image})'''
+{image_string}![{instance_prompt} {i}](https://huggingface.co/{model_id}/resolve/main/concept_images/{urllib.parse.quote(image)})'''
     readme_text = f'''---
 license: creativeml-openrail-m
 tags:
