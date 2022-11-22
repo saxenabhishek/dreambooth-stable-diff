@@ -180,7 +180,7 @@ def push(model_name, where_to_upload, hf_token):
             title_instance_prompt_string = ''
         previous_instance_prompt = instance_prompt
         image_string = f'''{title_instance_prompt_string}
-{image_string}![{instance_prompt} {i}](https://huggingface.co/{model_id}/resolve/main/sample_images/{image})'''
+{image_string}![{instance_prompt} {i}](https://huggingface.co/{model_id}/resolve/main/concept_images/{image})'''
     readme_text = f'''---
 license: creativeml-openrail-m
 tags:
@@ -249,7 +249,7 @@ with gr.Blocks(css=css) as demo:
                 </div>
             ''')    
     gr.Markdown("# Dreambooth training")
-    gr.Markdown("Customize Stable Diffusion by giving it with few-shot examples")
+    gr.Markdown("Customize Stable Diffusion by giving it with few-shot examples. Based on TheLastBen's [fast-DreamBooth Colab](https://colab.research.google.com/github/TheLastBen/fast-stable-diffusion/blob/main/fast-DreamBooth.ipynb) with 🧨 diffusers")
     with gr.Row():
         type_of_thing = gr.Dropdown(label="What would you like to train?", choices=["object", "person", "style"], value="object", interactive=True)
        
@@ -337,4 +337,4 @@ with gr.Blocks(css=css) as demo:
     generate_button.click(fn=generate, inputs=prompt, outputs=result_image)
     push_button.click(fn=push, inputs=[model_name, where_to_upload, hf_token], outputs=[success_message_upload, result])
     convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result)
-demo.launch()
+demo.launch(debug=True)
