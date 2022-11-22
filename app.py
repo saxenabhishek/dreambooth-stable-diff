@@ -158,9 +158,9 @@ def push(model_name, where_to_upload, hf_token):
     from huggingface_hub import HfApi, HfFolder, CommitOperationAdd
     from huggingface_hub import create_repo
     model_name_slug = slugify(model_name)
-    if(where_to_upload == "My personal profile"):
-        api = HfApi()
-        your_username = api.whoami(token=hf_token)["name"]
+    api = HfApi()
+    your_username = api.whoami(token=hf_token)["name"]
+    if(where_to_upload == "My personal profile"):    
         model_id = f"{your_username}/{model_name_slug}"
     else:
         model_id = f"sd-dreambooth-library/{model_name_slug}"
