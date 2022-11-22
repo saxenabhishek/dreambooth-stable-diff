@@ -237,7 +237,8 @@ with gr.Blocks(css=css) as demo:
             gr.HTML('''
                 <div class="gr-prose" style="max-width: 80%">
                 <h2>Attention - This Space doesn't work in this shared UI</h2>
-                <p>For it to work, you have to duplicate the Space and run it on your own profile where a (paid) private GPU will be attributed to it during runtime. As each T4 costs US$0,60/h, it should cost < US$1 to train a model with less than 100 images on default settings!</p> 
+                <p>For it to work, you have to duplicate the Space and run it on your own profile using a (paid) private T4 GPU for training. As each T4 costs US$0,60/h, it should cost < US$1 to train a model with less than 100 images using default settings!</p> 
+                <p>Please, duplicate this Space, then go to the Settings tab and select a T4 or T4 medium instance.</p> 
                 <img class="instruction" src="file/duplicate.png"> 
                 <img class="arrow" src="file/arrow.png" />
                 </div>
