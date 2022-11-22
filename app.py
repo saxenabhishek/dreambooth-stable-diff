@@ -251,13 +251,13 @@ with gr.Blocks(css=css) as demo:
                 </div>
             ''')    
     gr.Markdown("# Dreambooth training")
-    gr.Markdown("Customize Stable Diffusion by giving it with few-shot examples. Based on TheLastBen's [fast-DreamBooth Colab](https://colab.research.google.com/github/TheLastBen/fast-stable-diffusion/blob/main/fast-DreamBooth.ipynb) with 🧨 diffusers")
+    gr.Markdown("Customize Stable Diffusion by giving it a few examples. You can train up to three concepts by providing examples for each. This Space is based on TheLastBen's [fast-DreamBooth Colab](https://colab.research.google.com/github/TheLastBen/fast-stable-diffusion/blob/main/fast-DreamBooth.ipynb) with 🧨 diffusers")
     with gr.Row():
         type_of_thing = gr.Dropdown(label="What would you like to train?", choices=["object", "person", "style"], value="object", interactive=True)
        
     with gr.Row():
         with gr.Column():
-            thing_description = gr.Markdown("You are going to train an `object`, upload 5-10 images of the object you are planning on training on from different angles/perspectives. You must have the right to do so and you are liable for the images you use, example:")
+            thing_description = gr.Markdown("You are going to train an `object`, please upload 5-10 images of the object you are planning on training on from different angles/perspectives. You must have the right to do so and you are liable for the images you use, example:")
             thing_image_example = gr.HTML('''<img src="file/cat-toy.png" />''')
             things_naming = gr.Markdown("You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `cttoy` here). Images will be automatically cropped to 512x512.")
         with gr.Column():
