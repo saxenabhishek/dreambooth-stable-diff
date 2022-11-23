@@ -439,6 +439,8 @@ with gr.Blocks(css=css) as demo:
     push_button.click(fn=push, inputs=[model_name, where_to_upload, hf_token], outputs=[success_message_upload, result])
     #Button to convert the model to ckpt format 
     convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result)
+    
+    #Checks if the training is running
+    demo.load(fn=check_status,inputs=None, outputs=[top_description, try_your_model, push_to_hub, result, convert_button])
 
-demo.load(fn=check_status,inputs=None, outputs=[top_description, try_your_model, push_to_hub, result, convert_button])
 demo.launch(debug=True)
