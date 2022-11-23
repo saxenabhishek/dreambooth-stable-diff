@@ -68,7 +68,7 @@ def count_files(*inputs):
             Training_Steps = file_counter*200*2
         else:
             Training_Steps = file_counter*200
-    return([gr.update(visible=True), gr.update(visible=True, value=f"You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. This should take around {round(Training_Steps/1.5, 2)} seconds, or {round((Training_Steps/1.1)/3600, 2)} hours. As a reminder, the T4 GPU costs US$0.60 for 1h. Once training is over, don't forget to swap the hardware back to CPU.")])
+    return([gr.update(visible=True), gr.update(visible=True, value=f"You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. The training should take around {round(Training_Steps/1.1, 2)} seconds, or {round((Training_Steps/1.1)/60, 2)} minutes. The setup, compression and uploading the model can take up to 20 minutes. As the T4-Small GPU costs US$0.60 for 1h, the estimated cost for this training is below US${round((((Training_Steps/1.1)/3600)+0.3+0.1)*0.60, 2)}. If you check the box below the GPU attribution will automatically removed after training is done and the model is uploaded. If not don't forget to come back here and swap the hardware back to CPU.")])
 
 def train(*inputs):
     torch.cuda.empty_cache()
