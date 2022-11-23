@@ -68,7 +68,9 @@ def count_files(*inputs):
             Training_Steps = file_counter*200*2
         else:
             Training_Steps = file_counter*200
-    return([gr.update(visible=True), gr.update(visible=True, value=f"You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. The training should take around {round(Training_Steps/1.1, 2)} seconds, or {round((Training_Steps/1.1)/60, 2)} minutes. The setup, compression and uploading the model can take up to 20 minutes. As the T4-Small GPU costs US$0.60 for 1h, the estimated cost for this training is below US${round((((Training_Steps/1.1)/3600)+0.3+0.1)*0.60, 2)}. If you check the box below the GPU attribution will automatically removed after training is done and the model is uploaded. If not don't forget to come back here and swap the hardware back to CPU.")])
+    return([gr.update(visible=True), gr.update(visible=True, value=f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. The training should take around {round(Training_Steps/1.1, 2)} seconds, or {round((Training_Steps/1.1)/60, 2)} minutes.<br>
+    The setup, compression and uploading the model can take up to 20 minutes. As the T4-Small GPU costs US$0.60 for 1h, <b>the estimated cost for this training is <US${round((((Training_Steps/1.1)/3600)+0.3+0.1)*0.60, 2)}.</b><br>
+    If you check the box below the GPU attribution will automatically removed after training is done and the model is uploaded. If not, don't forget to come back here and swap the hardware back to CPU.''')])
 
 def train(*inputs):
     torch.cuda.empty_cache()
@@ -386,8 +388,8 @@ with gr.Blocks(css=css) as demo:
         perc_txt_encoder = gr.Number(label="Percentage of the training steps the text-encoder should be trained as well", value=30)
 
     with gr.Box(visible=False) as training_summary:
-        training_summary_text = gr.Textbox("", visible=False, label="Training Summary")
-        training_summary_checkbox = gr.Checkbox("Remove GPU After - automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training")
+        training_summary_text = gr.HTML("", visible=False, label="Training Summary")
+        training_summary_checkbox = gr.Checkbox(label="Automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training", value=False)
         training_summary_model_name = gr.Textbox(label="Name of your model", visible=False)
         training_summary_token_message = gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.", visible=False)            
         training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="password", visible=False)
