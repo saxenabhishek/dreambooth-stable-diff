@@ -449,6 +449,6 @@ with gr.Blocks(css=css) as demo:
     convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result)
     
     #Checks if the training is running
-    demo.load(fn=check_status, inputs=top_description, outputs=[top_description, try_your_model, push_to_hub, result, convert_button])
+    demo.load(fn=check_status, inputs=top_description, outputs=[top_description, try_your_model, push_to_hub, result, convert_button], queue=False)
 
 demo.launch(debug=True)
