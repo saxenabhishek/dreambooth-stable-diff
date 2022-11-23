@@ -1,10 +1,10 @@
 ---
 title: Dreambooth Training
-emoji: 🌖
+emoji: ☁️
 colorFrom: pink
 colorTo: red
 sdk: gradio
-sdk_version: 3.10.1
+sdk_version: 3.11
 app_file: app.py
 pinned: false
 license: mit

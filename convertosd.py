@@ -7,7 +7,7 @@ import argparse
 import os.path as osp
 
 import torch
-
+import gc 
 
 # =================#
 # UNet Conversion #
@@ -221,3 +221,6 @@ def convert(model_path, checkpoint_path):
     state_dict = {k:v.half() for k,v in state_dict.items()}
     state_dict = {"state_dict": state_dict}
     torch.save(state_dict, checkpoint_path)
+    del state_dict, text_enc_dict, vae_state_dict, unet_state_dict
+    torch.cuda.empty_cache()
+    gc.collect()

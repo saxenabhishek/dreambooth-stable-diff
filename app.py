@@ -11,17 +11,20 @@ import requests
 import torch
 import zipfile
 import urllib.parse
+import gc
 from diffusers import StableDiffusionPipeline
+from huggingface_hub import snapshot_download
 
 css = '''
     .instruction{position: absolute; top: 0;right: 0;margin-top: 0px !important}
     .arrow{position: absolute;top: 0;right: -110px;margin-top: -8px !important}
     #component-4, #component-3, #component-10{min-height: 0}
 '''
-model_to_load = "multimodalart/sd-fine-tunable"
 maximum_concepts = 3
+
 #Pre download the files even if we don't use it here
-StableDiffusionPipeline.from_pretrained(model_to_load)
+model_to_load = snapshot_download(repo_id="multimodalart/sd-fine-tunable")
+safety_checker = snapshot_download(repo_id="multimodalart/sd-sc")
 
 def zipdir(path, ziph):
     # ziph is zipfile handle
@@ -67,8 +70,14 @@ def count_files(*inputs):
     return(gr.update(visible=True, value=f"You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. This should take around {round(Training_Steps/1.5, 2)} seconds, or {round((Training_Steps/1.5)/3600, 2)} hours. As a reminder, the T4 GPU costs US$0.60 for 1h. Once training is over, don't forget to swap the hardware back to CPU."))
 
 def train(*inputs):
+    torch.cuda.empty_cache()
+    if 'pipe' in globals():
+        del pipe
+        gc.collect()
+
     if "IS_SHARED_UI" in os.environ:
         raise gr.Error("This Space only works in duplicated instances")
+    
     if os.path.exists("output_model"): shutil.rmtree('output_model')
     if os.path.exists("instance_images"): shutil.rmtree('instance_images')
     if os.path.exists("diffusers_model.zip"): os.remove("diffusers_model.zip")
@@ -135,19 +144,24 @@ def train(*inputs):
                 lr_warmup_steps = 0,
                 max_train_steps=Training_Steps,     
     )
+    print("Starting training...")
     run_training(args_general)
+    gc.collect()
     torch.cuda.empty_cache()
-    #convert("output_model", "model.ckpt")
-    #shutil.rmtree('instance_images')
-    #shutil.make_archive("diffusers_model", 'zip', "output_model")
+    print("Adding Safety Checker to the model...")
+    shutil.copytree(f"{safety_checker}/feature_extractor", "output_model/feature_extractor")
+    shutil.copytree(f"{safety_checker}/safety_checker", "output_model/safety_checker")
+    shutil.copy(f"model_index.json", "output_model/model_index.json")
+    print("Zipping model file...")
     with zipfile.ZipFile('diffusers_model.zip', 'w', zipfile.ZIP_DEFLATED) as zipf:
         zipdir('output_model/', zipf)
-    torch.cuda.empty_cache()
-    return [gr.update(visible=True, value=["diffusers_model.zip"]), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)]
+    print("Training completed!")
+    return [gr.update(visible=True, value=["diffusers_model.zip"]), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)]
 
 def generate(prompt):
+    torch.cuda.empty_cache()
     from diffusers import StableDiffusionPipeline
-    
+    global pipe
     pipe = StableDiffusionPipeline.from_pretrained("./output_model", torch_dtype=torch.float16)
     pipe = pipe.to("cuda")
     image = pipe(prompt).images[0]  
@@ -180,7 +194,7 @@ def push(model_name, where_to_upload, hf_token):
         else:
             title_instance_prompt_string = ''
         previous_instance_prompt = instance_prompt
-        image_string = f'''{title_instance_prompt_string}
+        image_string = f'''{title_instance_prompt_string} (use that on your prompt)
 {image_string}![{instance_prompt} {i}](https://huggingface.co/{model_id}/resolve/main/concept_images/{urllib.parse.quote(image)})'''
     readme_text = f'''---
 license: creativeml-openrail-m
@@ -189,13 +203,13 @@ tags:
 ---
 ### {model_name} Dreambooth model trained by {api.whoami(token=hf_token)["name"]} with [Hugging Face Dreambooth Training Space](https://huggingface.co/spaces/multimodalart/dreambooth-training)
 
-You run your new concept via `diffusers` [Colab Notebook for Inference](https://colab.research.google.com/github/huggingface/notebooks/blob/main/diffusers/sd_dreambooth_inference.ipynb)
+You run your new concept via `diffusers` [Colab Notebook for Inference](https://colab.research.google.com/github/huggingface/notebooks/blob/main/diffusers/sd_dreambooth_inference.ipynb). Don't forget to use the concept prompts! 
 
-Sample pictures of this concept:
+Sample pictures of:
 {image_string}
 '''
     #Save the readme to a file
-    readme_file = open("README.md", "w")
+    readme_file = open("model.README.md", "w")
     readme_file.write(readme_text)
     readme_file.close()
     #Save the token identifier to a file
@@ -205,7 +219,7 @@ Sample pictures of this concept:
     create_repo(model_id,private=True, token=hf_token)
     operations = [
         CommitOperationAdd(path_in_repo="token_identifier.txt", path_or_fileobj="token_identifier.txt"),
-        CommitOperationAdd(path_in_repo="README.md", path_or_fileobj="README.md"),
+        CommitOperationAdd(path_in_repo="README.md", path_or_fileobj="model.README.md"),
         CommitOperationAdd(path_in_repo=f"model.ckpt",path_or_fileobj="model.ckpt")
     ]
     api.create_commit(
@@ -237,17 +251,17 @@ with gr.Blocks(css=css) as demo:
             gr.HTML('''
                 <div class="gr-prose" style="max-width: 80%">
                 <h2>Attention - This Space doesn't work in this shared UI</h2>
-                <p>For it to work, you have to duplicate the Space and run it on your own profile using a (paid) private T4 GPU for training. As each T4 costs US$0,60/h, it should cost < US$1 to train a model with less than 100 images using default settings!</p> 
-                <p>Please, duplicate this Space, then go to the Settings tab and select a T4 or T4 medium instance.</p> 
+                <p>For it to work, you have to duplicate the Space and run it on your own profile using a (paid) private T4 GPU for training. As each T4 costs US$0.60/h, it should cost < US$1 to train a model with less than 100 images using default settings!</p> 
+                <p>Please, duplicate this Space, then go to the Settings tab and select a T4 instance.</p> 
                 <img class="instruction" src="file/duplicate.png"> 
                 <img class="arrow" src="file/arrow.png" />
                 </div>
             ''')
         else:
-            gr.HTML('''
+            gr.HTML(f'''
                 <div class="gr-prose" style="max-width: 80%">
-                <h2>You have successfully cloned the Dreambooth Training Space</h2>
-                <p>If you haven't already, attribute a T4 GPU to it (via the Settings tab) and run the training below. You will be billed by the minute from when you activate the GPU until when you turn it off.</p> 
+                <h2>You have successfully duplicated the Dreambooth Training Space</h2>
+                <p>If you haven't already, <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}/settings">attribute a T4 GPU to it (via the Settings tab)</a> and run the training below. You will be billed by the minute from when you activate the GPU until when you turn it off.</p> 
                 </div>
             ''')    
     gr.Markdown("# Dreambooth training")
@@ -277,9 +291,9 @@ with gr.Blocks(css=css) as demo:
                     visible = False
                     is_visible.append(gr.State(value=False))
 
-                file_collection.append(gr.File(label=f"Upload the images for your {ordinal(x+1)} concept", file_count="multiple", interactive=True, visible=visible))
+                file_collection.append(gr.File(label=f'''Upload the images for your {ordinal(x+1) if (x>0) else ""} concept''', file_count="multiple", interactive=True, visible=visible))
                 with gr.Column(visible=visible) as row[x]:
-                    concept_collection.append(gr.Textbox(label=f"{ordinal(x+1)} concept prompt - use a unique, made up word to avoid collisions"))  
+                    concept_collection.append(gr.Textbox(label=f'''{ordinal(x+1) if (x>0) else ""} concept prompt - use a unique, made up word to avoid collisions'''))  
                     with gr.Row():
                         if(x < maximum_concepts-1):
                             buttons_collection.append(gr.Button(value="Add +1 concept", visible=visible))
@@ -302,9 +316,7 @@ with gr.Blocks(css=css) as demo:
                 if(counter_delete < len(delete_collection)+1):
                     delete_button.click(lambda:[gr.update(visible=False),gr.update(visible=False), gr.update(visible=True), False], None, [file_collection[counter_delete], row[counter_delete], buttons_collection[counter_delete-1], is_visible[counter_delete]], queue=False)
                 counter_delete += 1
-            
-            
-            
+                  
     with gr.Accordion("Custom Settings", open=False):
         swap_auto_calculated = gr.Checkbox(label="Use custom settings")
         gr.Markdown("If not checked, the number of steps and % of frozen encoder will be tuned automatically according to the amount of images you upload and whether you are training an `object`, `person` or `style` as follows: The number of steps is calculated by number of images uploaded multiplied by 20. The text-encoder is frozen after 10% of the steps for a style, 30% of the steps for an object and is fully trained for persons.")
@@ -315,27 +327,33 @@ with gr.Blocks(css=css) as demo:
     training_summary = gr.Textbox("", visible=False, label="Training Summary")
     steps.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary], queue=False)
     perc_txt_encoder.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary], queue=False)
+    
     for file in file_collection:
         file.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary], queue=False)
     train_btn = gr.Button("Start Training")
-    with gr.Box(visible=False) as try_your_model:
-        gr.Markdown("## Try your model")
-        with gr.Row():
+    
+    completed_training = gr.Markdown("# ✅ Training completed", visible=False)
+    
+    with gr.Row():
+        with gr.Box(visible=False) as try_your_model:
+            gr.Markdown("## Try your model")
             prompt = gr.Textbox(label="Type your prompt")
             result_image = gr.Image()
-        generate_button = gr.Button("Generate Image")
-    with gr.Box(visible=False) as push_to_hub:
-        gr.Markdown("## Push to Hugging Face Hub")
-        model_name = gr.Textbox(label="Name of your model", placeholder="Tarsila do Amaral Style")
-        where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], label="Upload to")
-        gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.")
-        hf_token = gr.Textbox(label="Hugging Face Write Token")
-        push_button = gr.Button("Push to the Hub")
+            generate_button = gr.Button("Generate Image")
+        
+        with gr.Box(visible=False) as push_to_hub:
+            gr.Markdown("## Push to Hugging Face Hub")
+            model_name = gr.Textbox(label="Name of your model", placeholder="Tarsila do Amaral Style")
+            where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], label="Upload to")
+            gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.")
+            hf_token = gr.Textbox(label="Hugging Face Write Token")
+            push_button = gr.Button("Push to the Hub")
+    
     result = gr.File(label="Download the uploaded models in the diffusers format", visible=True)
     success_message_upload = gr.Markdown(visible=False)
     convert_button = gr.Button("Convert to CKPT", visible=False)
 
-    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button])
+    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, completed_training])
     generate_button.click(fn=generate, inputs=prompt, outputs=result_image)
     push_button.click(fn=push, inputs=[model_name, where_to_upload, hf_token], outputs=[success_message_upload, result])
     convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result)

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 import subprocess
 import sys
+import gc 
 
 import torch
 import torch.nn.functional as F
@@ -812,7 +813,9 @@ def run_training(args_imported):
             repo.push_to_hub(commit_message="End of training", blocking=False, auto_lfs_prune=True)
 
     accelerator.end_training()
-
+    del pipeline
+    torch.cuda.empty_cache()
+    gc.collect()
 if __name__ == "__main__":
     pass
     #main()
