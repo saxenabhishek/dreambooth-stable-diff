@@ -265,7 +265,7 @@ with gr.Blocks(css=css) as demo:
                 </div>
             ''')    
     gr.Markdown("# Dreambooth training")
-    gr.Markdown("Customize Stable Diffusion by giving it a few examples. You can train up to three concepts by providing examples for each. This Space is based on TheLastBen's [fast-DreamBooth Colab](https://colab.research.google.com/github/TheLastBen/fast-stable-diffusion/blob/main/fast-DreamBooth.ipynb) with 🧨 diffusers")
+    gr.Markdown("Customize Stable Diffusion by giving it a few examples. You can train up to three concepts by providing examples for each. This Space is based on TheLastBen's [fast-DreamBooth Colab](https://colab.research.google.com/github/TheLastBen/fast-stable-diffusion/blob/main/fast-DreamBooth.ipynb) with [🧨 diffusers](https://github.com/huggingface/diffusers)")
     with gr.Row():
         type_of_thing = gr.Dropdown(label="What would you like to train?", choices=["object", "person", "style"], value="object", interactive=True)
        
