@@ -68,7 +68,7 @@ def count_files(*inputs):
             Training_Steps = file_counter*200*2
         else:
             Training_Steps = file_counter*200
-    return(gr.update(visible=True, value=f"You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. This should take around {round(Training_Steps/1.5, 2)} seconds, or {round((Training_Steps/1.5)/3600, 2)} hours. As a reminder, the T4 GPU costs US$0.60 for 1h. Once training is over, don't forget to swap the hardware back to CPU."))
+    return([gr.update(visible=True), gr.update(visible=True, value=f"You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. This should take around {round(Training_Steps/1.5, 2)} seconds, or {round((Training_Steps/1.1)/3600, 2)} hours. As a reminder, the T4 GPU costs US$0.60 for 1h. Once training is over, don't forget to swap the hardware back to CPU.")])
 
 def train(*inputs):
     torch.cuda.empty_cache()
@@ -83,6 +83,7 @@ def train(*inputs):
     if os.path.exists("instance_images"): shutil.rmtree('instance_images')
     if os.path.exists("diffusers_model.zip"): os.remove("diffusers_model.zip")
     if os.path.exists("model.ckpt"): os.remove("model.ckpt")
+    if os.path.exists("hastrained.success"): os.remove("hastrained.success")
     file_counter = 0
     for i, input in enumerate(inputs):
         if(i < maximum_concepts-1):
@@ -110,6 +111,9 @@ def train(*inputs):
     os.makedirs('output_model',exist_ok=True)
     uses_custom = inputs[-1] 
     type_of_thing = inputs[-4]
+    model_name = inputs[-7]
+    remove_attribution_after = inputs[-6]
+    hf_token = inputs[-5]
     if(uses_custom):
         Training_Steps = int(inputs[-3])
         Train_text_encoder_for = int(inputs[-2])
@@ -146,6 +150,8 @@ def train(*inputs):
                 max_train_steps=Training_Steps,     
     )
     print("Starting training...")
+    lock_file = open("intraining.lock", "w")
+    lock_file.close()
     run_training(args_general)
     gc.collect()
     torch.cuda.empty_cache()
@@ -157,7 +163,23 @@ def train(*inputs):
     with zipfile.ZipFile('diffusers_model.zip', 'w', zipfile.ZIP_DEFLATED) as zipf:
         zipdir('output_model/', zipf)
     print("Training completed!")
-    return [gr.update(visible=True, value=["diffusers_model.zip"]), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)]
+    if os.path.exists("intraining.lock"): os.remove("intraining.lock")
+    trained_file = open("hastrained.success", "w")
+    trained_file.close()
+    if(remove_attribution_after):
+        push(model_name, "My personal profile", hf_token, True)
+        hardware_url = f"https://huggingface.co/spaces/{os.environ['SPACE_ID']}/hardware"
+        headers = { "authorization" : f"Bearer {hf_token}"}
+        body = {'flavor': 'cpu-basic'}
+        requests.post(hardware_url, json = body, headers=headers)
+    return [
+        gr.update(visible=True, value=["diffusers_model.zip"]), #result
+        gr.update(visible=True), #try_your_model
+        gr.update(visible=True), #push_to_hub
+        gr.update(visible=True), #convert_button
+        gr.update(visible=False), #training_ongoing
+        gr.update(visible=True) #completed_training
+    ]
 
 def generate(prompt):
     torch.cuda.empty_cache()
@@ -168,7 +190,7 @@ def generate(prompt):
     image = pipe(prompt).images[0]  
     return(image)
     
-def push(model_name, where_to_upload, hf_token):
+def push(model_name, where_to_upload, hf_token, comes_from_automated=False):
     if(not os.path.exists("model.ckpt")):
         convert("output_model", "model.ckpt")
     from huggingface_hub import HfApi, HfFolder, CommitOperationAdd
@@ -240,16 +262,51 @@ Sample pictures of:
     repo_id=model_id,
     token=hf_token
     )
+    if(not comes_from_automated):
+        extra_message = "Don't forget to remove the GPU attribution after you play with it."
+    else:
+        extra_message = "The GPU has been removed automatically as requested, and you can try the model via the model page"
+    api.create_discussion(repo_id=os.environ['SPACE_ID'], title=f"Your model {model_name} has finished trained from the Dreambooth Train Spaces!", description=f"Your model has been successfully uploaded to: https://huggingface.co/{model_id}. {extra_message}")
+
     return [gr.update(visible=True, value=f"Successfully uploaded your model. Access it [here](https://huggingface.co/{model_id})"), gr.update(visible=True, value=["diffusers_model.zip", "model.ckpt"])]
 
 def convert_to_ckpt():
     convert("output_model", "model.ckpt")
     return gr.update(visible=True, value=["diffusers_model.zip", "model.ckpt"])
 
+def check_status():
+    if os.path.exists("hastrained.success"):
+        update_top_tag = gr.Update(value=f'''
+        <div class="gr-prose" style="max-width: 80%">
+            <h2>Your model has finished training ✅</h2>
+            <p>Yay, congratulations on training your model. Scroll down to play with with it, save it (either downloading it or on the Hugging Face Hub). Once you are done, your model is safe, and you don't want to train a new one, go to the <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}">settings page</a> and downgrade your Space to a CPU Basic</p> 
+        </div>
+        ''')
+        show_outputs = True
+    elif os.path.exists("intraining.lock"):
+        update_top_tag = gr.Update(value='''
+        <div class="gr-prose" style="max-width: 80%">
+            <h2>Don't worry, your model is still training! ⌛</h2>
+            <p>You closed the tab while your model was training, but it's all good! It is still training right now. You can click the "Open logs" button above here to check the training status. Once training is done, reload this tab to interact with your model</p> 
+        </div>
+        ''')
+        show_outputs = False
+    return [
+        update_top_tag, #top_description
+        gr.update(visible=show_outputs), #try_your_model
+        gr.update(visible=show_outputs), #push_to_hub
+        gr.update(visible=show_outputs, value=["diffusers_model.zip"]), #result
+        gr.update(visible=show_outputs), #convert_button
+    ]
+
+def checkbox_swap(checkbox):
+    reverse_bool = not checkbox
+    return [gr.update(visible=reverse_bool), gr.update(visible=reverse_bool), gr.update(visible=reverse_bool)]
+
 with gr.Blocks(css=css) as demo:
     with gr.Box():
         if "IS_SHARED_UI" in os.environ:
-            gr.HTML(f'''
+            top_description = gr.HTML(f'''
                 <div class="gr-prose" style="max-width: 80%">
                 <h2>Attention - This Space doesn't work in this shared UI</h2>
                 <p>For it to work, you have to duplicate the Space and run it on your own profile using a (paid) private T4 GPU for training. As each T4 costs US$0.60/h, it should cost < US$1 to train a model with less than 100 images using default settings!&nbsp;&nbsp;<a class="duplicate-button" style="display:inline-block" href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}?duplicate=true"><img src="https://img.shields.io/badge/-Duplicate%20Space-blue?labelColor=white&style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAP5JREFUOE+lk7FqAkEURY+ltunEgFXS2sZGIbXfEPdLlnxJyDdYB62sbbUKpLbVNhyYFzbrrA74YJlh9r079973psed0cvUD4A+4HoCjsA85X0Dfn/RBLBgBDxnQPfAEJgBY+A9gALA4tcbamSzS4xq4FOQAJgCDwV2CPKV8tZAJcAjMMkUe1vX+U+SMhfAJEHasQIWmXNN3abzDwHUrgcRGmYcgKe0bxrblHEB4E/pndMazNpSZGcsZdBlYJcEL9Afo75molJyM2FxmPgmgPqlWNLGfwZGG6UiyEvLzHYDmoPkDDiNm9JR9uboiONcBXrpY1qmgs21x1QwyZcpvxt9NS09PlsPAAAAAElFTkSuQmCC&logoWidth=14" alt="Duplicate Space"></a></p>
@@ -258,18 +315,20 @@ with gr.Blocks(css=css) as demo:
                 </div>
             ''')
         else:
-            gr.HTML(f'''
+            top_description = gr.HTML(f'''
                 <div class="gr-prose" style="max-width: 80%">
-                <h2>You have successfully duplicated the Dreambooth Training Space</h2>
+                <h2>You have successfully duplicated the Dreambooth Training Space 🎉</h2>
                 <p>If you haven't already, <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}/settings">attribute a T4 GPU to it (via the Settings tab)</a> and run the training below. You will be billed by the minute from when you activate the GPU until when you turn it off.</p> 
                 </div>
             ''')    
     gr.Markdown("# Dreambooth training")
     gr.Markdown("Customize Stable Diffusion by giving it a few examples. You can train up to three concepts by providing examples for each. This Space is based on TheLastBen's [fast-DreamBooth Colab](https://colab.research.google.com/github/TheLastBen/fast-stable-diffusion/blob/main/fast-DreamBooth.ipynb) with [🧨 diffusers](https://github.com/huggingface/diffusers)")
-    with gr.Row():
+    
+    with gr.Row() as what_are_you_training:
         type_of_thing = gr.Dropdown(label="What would you like to train?", choices=["object", "person", "style"], value="object", interactive=True)
-       
-    with gr.Row():
+
+    #Very hacky approach to emulate dynamically created Gradio components   
+    with gr.Row() as upload_your_concept:
         with gr.Column():
             thing_description = gr.Markdown("You are going to train an `object`, please upload 5-10 images of the object you are planning on training on from different angles/perspectives. You must have the right to do so and you are liable for the images you use, example:")
             thing_image_example = gr.HTML('''<img src="file/cat-toy.png" />''')
@@ -323,16 +382,20 @@ with gr.Blocks(css=css) as demo:
         steps = gr.Number(label="How many steps", value=800)
         perc_txt_encoder = gr.Number(label="Percentage of the training steps the text-encoder should be trained as well", value=30)
 
-    type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder], queue=False)
-    training_summary = gr.Textbox("", visible=False, label="Training Summary")
-    steps.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary], queue=False)
-    perc_txt_encoder.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary], queue=False)
+    with gr.Box(visible=False) as training_summary:
+        training_summary_text = gr.Textbox("", visible=False, label="Training Summary")
+        training_summary_checkbox = gr.Checkbox("Remove GPU After - automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training")
+        training_summary_model_name = gr.Textbox(label="Name of your model", visible=False)
+        training_summary_token_message = gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.", visible=False)            
+        training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="type", visible=False)
     
-    for file in file_collection:
-        file.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary], queue=False)
     train_btn = gr.Button("Start Training")
     
-    completed_training = gr.Markdown("# ✅ Training completed", visible=False)
+    training_ongoing = gr.Markdown("## Training is ongoing ⌛... You can close this tab if you like or just wait. If you did not check `Remove GPU After`, you can come back here to try your model and upload it after training. Don't forget to remove the GPU attribution after you are done. ", visible=False)
+    
+    #Post-training UI
+    completed_training = gr.Markdown('''# ✅ Training completed. 
+    ### Don't forget to remove the GPU attribution after you are done trying and uploading your model''', visible=False)
     
     with gr.Row():
         with gr.Box(visible=False) as try_your_model:
@@ -346,15 +409,36 @@ with gr.Blocks(css=css) as demo:
             model_name = gr.Textbox(label="Name of your model", placeholder="Tarsila do Amaral Style")
             where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], label="Upload to")
             gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.")
-            hf_token = gr.Textbox(label="Hugging Face Write Token")
+            hf_token = gr.Textbox(label="Hugging Face Write Token", type="password")
             push_button = gr.Button("Push to the Hub")
     
     result = gr.File(label="Download the uploaded models in the diffusers format", visible=True)
     success_message_upload = gr.Markdown(visible=False)
     convert_button = gr.Button("Convert to CKPT", visible=False)
-
-    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, completed_training])
+    
+    #Swap the examples and the % of text encoder trained depending if it is an object, person or style
+    type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder], queue=False)
+    
+    #Update the summary box below the UI according to how many images are uploaded and whether users are using custom settings or not 
+    for file in file_collection:
+        file.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
+    steps.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
+    perc_txt_encoder.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
+    
+    #Give more options if the user wants to finish everything after training
+    training_summary_checkbox.change(fn=checkbox_swap, inputs=training_summary_checkbox, outputs=[training_summary_token_message, training_summary_token, training_summary_model_name])
+    #Add a message for while it is in training
+    train_btn.click(lambda:gr.Update(visible=True), inputs=None, outputs=training_ongoing)
+    
+    #The main train function
+    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[training_summary_model_name]+[training_summary_checkbox]+[training_summary_token]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, training_ongoing, completed_training])
+    
+    #Button to generate an image from your trained model after training
     generate_button.click(fn=generate, inputs=prompt, outputs=result_image)
+    #Button to push the model to the Hugging Face Hub
     push_button.click(fn=push, inputs=[model_name, where_to_upload, hf_token], outputs=[success_message_upload, result])
+    #Button to convert the model to ckpt format 
     convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result)
+
+demo.load(fn=check_status,inputs=None, outputs=[top_description, try_your_model, push_to_hub, result, convert_button])
 demo.launch(debug=True)
