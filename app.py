@@ -387,7 +387,7 @@ with gr.Blocks(css=css) as demo:
         training_summary_checkbox = gr.Checkbox("Remove GPU After - automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training")
         training_summary_model_name = gr.Textbox(label="Name of your model", visible=False)
         training_summary_token_message = gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.", visible=False)            
-        training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="type", visible=False)
+        training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="password", visible=False)
     
     train_btn = gr.Button("Start Training")
     
