@@ -294,11 +294,15 @@ def check_status(top_description):
     else:
         update_top_tag = gr.update(value=top_description)
         show_outputs = False
+    if os.path.exists("diffusers_model.zip"):
+       update_files_tag = gr.update(visible=show_outputs, value=["diffusers_model.zip"])
+    else:
+       update_files_tag = gr.update(visible=show_outputs)
     return [
         update_top_tag, #top_description
         gr.update(visible=show_outputs), #try_your_model
         gr.update(visible=show_outputs), #push_to_hub
-        gr.update(visible=show_outputs, value=["diffusers_model.zip"]), #result
+        update_files_tag, #result
         gr.update(visible=show_outputs), #convert_button
     ]
 
