@@ -274,9 +274,9 @@ def convert_to_ckpt():
     convert("output_model", "model.ckpt")
     return gr.update(visible=True, value=["diffusers_model.zip", "model.ckpt"])
 
-def check_status():
+def check_status(top_description):
     if os.path.exists("hastrained.success"):
-        update_top_tag = gr.Update(value=f'''
+        update_top_tag = gr.update(value=f'''
         <div class="gr-prose" style="max-width: 80%">
             <h2>Your model has finished training ✅</h2>
             <p>Yay, congratulations on training your model. Scroll down to play with with it, save it (either downloading it or on the Hugging Face Hub). Once you are done, your model is safe, and you don't want to train a new one, go to the <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}">settings page</a> and downgrade your Space to a CPU Basic</p> 
@@ -284,7 +284,7 @@ def check_status():
         ''')
         show_outputs = True
     elif os.path.exists("intraining.lock"):
-        update_top_tag = gr.Update(value='''
+        update_top_tag = gr.update(value='''
         <div class="gr-prose" style="max-width: 80%">
             <h2>Don't worry, your model is still training! ⌛</h2>
             <p>You closed the tab while your model was training, but it's all good! It is still training right now. You can click the "Open logs" button above here to check the training status. Once training is done, reload this tab to interact with your model</p> 
@@ -292,7 +292,8 @@ def check_status():
         ''')
         show_outputs = False
     else:
-        update_top_tag = gr.Update()
+        update_top_tag = gr.update(value=top_description)
+        show_outputs = False
     return [
         update_top_tag, #top_description
         gr.update(visible=show_outputs), #try_your_model
@@ -320,7 +321,7 @@ with gr.Blocks(css=css) as demo:
             top_description = gr.HTML(f'''
                 <div class="gr-prose" style="max-width: 80%">
                 <h2>You have successfully duplicated the Dreambooth Training Space 🎉</h2>
-                <p>If you haven't already, <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}/settings">attribute a T4 GPU to it (via the Settings tab)</a> and run the training below. You will be billed by the minute from when you activate the GPU until when you turn it off.</p> 
+                <p>If you haven't already, <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}/settings">attribute a T4 GPU to it (via the Settings tab)</a> and run the training below. You will be billed by the minute from when you activate the GPU until when it is turned it off.</p> 
                 </div>
             ''')    
     gr.Markdown("# Dreambooth training")
@@ -430,7 +431,7 @@ with gr.Blocks(css=css) as demo:
     #Give more options if the user wants to finish everything after training
     training_summary_checkbox.change(fn=checkbox_swap, inputs=training_summary_checkbox, outputs=[training_summary_token_message, training_summary_token, training_summary_model_name])
     #Add a message for while it is in training
-    train_btn.click(lambda:gr.Update(visible=True), inputs=None, outputs=training_ongoing)
+    train_btn.click(lambda:gr.update(visible=True), inputs=None, outputs=training_ongoing)
     
     #The main train function
     train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[training_summary_model_name]+[training_summary_checkbox]+[training_summary_token]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, training_ongoing, completed_training])
@@ -443,6 +444,6 @@ with gr.Blocks(css=css) as demo:
     convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result)
     
     #Checks if the training is running
-    demo.load(fn=check_status, inputs=[], outputs=[top_description, try_your_model, push_to_hub, result, convert_button])
+    demo.load(fn=check_status, inputs=top_description, outputs=[top_description, try_your_model, push_to_hub, result, convert_button])
 
 demo.launch(debug=True)
