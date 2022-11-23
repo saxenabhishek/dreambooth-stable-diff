@@ -291,6 +291,8 @@ def check_status():
         </div>
         ''')
         show_outputs = False
+    else:
+        update_top_tag = gr.Update()
     return [
         update_top_tag, #top_description
         gr.update(visible=show_outputs), #try_your_model
@@ -441,6 +443,6 @@ with gr.Blocks(css=css) as demo:
     convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result)
     
     #Checks if the training is running
-    demo.load(fn=check_status,inputs=None, outputs=[top_description, try_your_model, push_to_hub, result, convert_button])
+    demo.load(fn=check_status, inputs=[], outputs=[top_description, try_your_model, push_to_hub, result, convert_button])
 
 demo.launch(debug=True)
