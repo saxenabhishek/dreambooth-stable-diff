@@ -283,7 +283,7 @@ Sample pictures of:
         extra_message = "Don't forget to remove the GPU attribution after you play with it."
     else:
         extra_message = "The GPU has been removed automatically as requested, and you can try the model via the model page"
-    api.create_discussion(repo_id=os.environ['SPACE_ID'], title=f"Your model {model_name} has finished trained from the Dreambooth Train Spaces!", description=f"Your model has been successfully uploaded to: https://huggingface.co/{model_id}. {extra_message}",token=hf_token)
+    api.create_discussion(repo_id=os.environ['SPACE_ID'], title=f"Your model {model_name} has finished trained from the Dreambooth Train Spaces!", description=f"Your model has been successfully uploaded to: https://huggingface.co/{model_id}. {extra_message}",repo_type="space", token=hf_token)
 
     return [gr.update(visible=True, value=f"Successfully uploaded your model. Access it [here](https://huggingface.co/{model_id})"), gr.update(visible=True, value=["diffusers_model.zip", "model.ckpt"])]
 
