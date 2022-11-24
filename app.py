@@ -229,7 +229,7 @@ def push(model_name, where_to_upload, hf_token, comes_from_automated=False):
         else:
             title_instance_prompt_string = ''
         previous_instance_prompt = instance_prompt
-        image_string = f'''{title_instance_prompt_string} (use that on your prompt)
+        image_string = f'''{title_instance_prompt_string} {"(use that on your prompt)" if title_instance_prompt_string != "" else ""} 
 {image_string}![{instance_prompt} {i}](https://huggingface.co/{model_id}/resolve/main/concept_images/{urllib.parse.quote(image)})'''
     readme_text = f'''---
 license: creativeml-openrail-m
