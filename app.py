@@ -442,16 +442,16 @@ with gr.Blocks(css=css) as demo:
     train_btn.click(lambda:gr.update(visible=True), inputs=None, outputs=training_ongoing)
     
     #The main train function
-    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[training_summary_model_name]+[training_summary_checkbox]+[training_summary_token]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, training_ongoing, completed_training])
+    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[training_summary_model_name]+[training_summary_checkbox]+[training_summary_token]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, training_ongoing, completed_training], queue=True)
     
     #Button to generate an image from your trained model after training
-    generate_button.click(fn=generate, inputs=prompt, outputs=result_image)
+    generate_button.click(fn=generate, inputs=prompt, outputs=result_image, queue=True)
     #Button to push the model to the Hugging Face Hub
-    push_button.click(fn=push, inputs=[model_name, where_to_upload, hf_token], outputs=[success_message_upload, result])
+    push_button.click(fn=push, inputs=[model_name, where_to_upload, hf_token], outputs=[success_message_upload, result], queue=True)
     #Button to convert the model to ckpt format 
-    convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result)
+    convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result, queue=True)
     
     #Checks if the training is running
     demo.load(fn=check_status, inputs=top_description, outputs=[top_description, try_your_model, push_to_hub, result, convert_button], queue=False)
 
-demo.launch(debug=True)
+demo.queue(default_enabled=False).launch(debug=True)
