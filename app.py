@@ -435,7 +435,7 @@ with gr.Blocks(css=css) as demo:
     convert_button = gr.Button("Convert to CKPT", visible=False)
     
     #Swap the examples and the % of text encoder trained depending if it is an object, person or style
-    type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder], queue=False)
+    type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder], queue=False, show_progress=False)
     
     #Update the summary box below the UI according to how many images are uploaded and whether users are using custom settings or not 
     for file in file_collection:
@@ -444,7 +444,7 @@ with gr.Blocks(css=css) as demo:
     perc_txt_encoder.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     
     #Give more options if the user wants to finish everything after training
-    training_summary_checkbox.change(fn=checkbox_swap, inputs=training_summary_checkbox, outputs=[training_summary_token_message, training_summary_token, training_summary_model_name])
+    training_summary_checkbox.change(fn=checkbox_swap, inputs=training_summary_checkbox, outputs=[training_summary_token_message, training_summary_token, training_summary_model_name],queue=False, show_progress=False)
     #Add a message for while it is in training
     train_btn.click(lambda:gr.update(visible=True), inputs=None, outputs=training_ongoing)
     
@@ -459,6 +459,6 @@ with gr.Blocks(css=css) as demo:
     convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result, queue=True)
     
     #Checks if the training is running
-    demo.load(fn=check_status, inputs=top_description, outputs=[top_description, try_your_model, push_to_hub, result, convert_button], queue=False)
+    demo.load(fn=check_status, inputs=top_description, outputs=[top_description, try_your_model, push_to_hub, result, convert_button], queue=False, show_progress=False)
 
 demo.queue(default_enabled=False).launch(debug=True)
