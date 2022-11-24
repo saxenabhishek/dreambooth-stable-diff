@@ -251,7 +251,9 @@ Sample pictures of:
     try:
         create_repo(model_id,private=True, token=hf_token)
     except:
-        create_repo(f"{model_id}-new", private=True,token=hf_token)
+        import time
+        epoch_time = str(int(time.time()))
+        create_repo(f"{model_id}-{epoch_time}", private=True,token=hf_token)
     operations = [
         CommitOperationAdd(path_in_repo="token_identifier.txt", path_or_fileobj="token_identifier.txt"),
         CommitOperationAdd(path_in_repo="README.md", path_or_fileobj="model.README.md"),
