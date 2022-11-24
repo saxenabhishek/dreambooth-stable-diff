@@ -451,7 +451,7 @@ with gr.Blocks(css=css) as demo:
     train_btn.click(lambda:gr.update(visible=True), inputs=None, outputs=training_ongoing)
     
     #The main train function
-    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[training_summary_model_name]+[training_summary_checkbox]+[training_summary_token]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, training_ongoing, completed_training], queue=True)
+    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[training_summary_model_name]+[training_summary_checkbox]+[training_summary_token]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, training_ongoing, completed_training], queue=False)
     
     #Button to generate an image from your trained model after training
     generate_button.click(fn=generate, inputs=prompt, outputs=result_image, queue=False)
