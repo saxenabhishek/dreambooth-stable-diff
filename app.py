@@ -72,6 +72,19 @@ def count_files(*inputs):
     The setup, compression and uploading the model can take up to 20 minutes.<br>As the T4-Small GPU costs US$0.60 for 1h, <span style="font-size: 120%"><b>the estimated cost for this training is US${round((((Training_Steps/1.1)/3600)+0.3+0.1)*0.60, 2)}.</b></span><br><br>
     If you check the box below the GPU attribution will automatically removed after training is done and the model is uploaded. If not, don't forget to come back here and swap the hardware back to CPU.<br><br>''')])
 
+def pad_image(image):
+    w, h = image.size
+    if w == h:
+        return image
+    elif w > h:
+        new_image = Image.new(image.mode, (w, w), (0, 0, 0))
+        new_image.paste(image, (0, (w - h) // 2))
+        return new_image
+    else:
+        new_image = Image.new(image.mode, (h, h), (0, 0, 0))
+        new_image.paste(image, ((h - w) // 2, 0))
+        return new_image
+
 def train(*inputs):
     torch.cuda.empty_cache()
     if 'pipe' in globals():
@@ -97,13 +110,7 @@ def train(*inputs):
                     raise gr.Error("You forgot to define your concept prompt")
                 for j, file_temp in enumerate(files):
                     file = Image.open(file_temp.name)
-                    width, height = file.size
-                    side_length = min(width, height)
-                    left = (width - side_length)/2
-                    top = (height - side_length)/2
-                    right = (width + side_length)/2
-                    bottom = (height + side_length)/2
-                    image = file.crop((left, top, right, bottom))
+                    image = pad_image(file)
                     image = image.resize((512, 512))
                     extension = file_temp.name.split(".")[1]
                     image = image.convert('RGB')
