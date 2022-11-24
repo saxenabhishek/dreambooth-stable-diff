@@ -120,9 +120,9 @@ def train(*inputs):
     os.makedirs('output_model',exist_ok=True)
     uses_custom = inputs[-1] 
     type_of_thing = inputs[-4]
-    model_name = inputs[-7]
+    
     remove_attribution_after = inputs[-6]
-    hf_token = inputs[-5]
+   
     if(uses_custom):
         Training_Steps = int(inputs[-3])
         Train_text_encoder_for = int(inputs[-2])
@@ -176,7 +176,10 @@ def train(*inputs):
     trained_file = open("hastrained.success", "w")
     trained_file.close()
     if(remove_attribution_after):
-        push(model_name, "My personal profile", hf_token, True)
+        hf_token = inputs[-5]
+        model_name = inputs[-7]
+        where_to_upload = inputs[-8]
+        push(model_name, where_to_upload, hf_token, True)
         hardware_url = f"https://huggingface.co/spaces/{os.environ['SPACE_ID']}/hardware"
         headers = { "authorization" : f"Bearer {hf_token}"}
         body = {'flavor': 'cpu-basic'}
@@ -321,7 +324,7 @@ def check_status(top_description):
     ]
 
 def checkbox_swap(checkbox):
-    return [gr.update(visible=checkbox), gr.update(visible=checkbox), gr.update(visible=checkbox)]
+    return [gr.update(visible=checkbox), gr.update(visible=checkbox), gr.update(visible=checkbox), gr.update(visible=checkbox)]
 
 with gr.Blocks(css=css) as demo:
     with gr.Box():
@@ -406,6 +409,7 @@ with gr.Blocks(css=css) as demo:
         training_summary_text = gr.HTML("", visible=False, label="Training Summary")
         training_summary_checkbox = gr.Checkbox(label="Automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training", value=False)
         training_summary_model_name = gr.Textbox(label="Name of your model", visible=False)
+        training_summary_where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], label="Upload to", visible=False)
         training_summary_token_message = gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.", visible=False)            
         training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="password", visible=False)
     
@@ -430,6 +434,7 @@ with gr.Blocks(css=css) as demo:
             where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], label="Upload to")
             gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.")
             hf_token = gr.Textbox(label="Hugging Face Write Token", type="password")
+            
             push_button = gr.Button("Push to the Hub")
     
     result = gr.File(label="Download the uploaded models in the diffusers format", visible=True)
@@ -446,12 +451,12 @@ with gr.Blocks(css=css) as demo:
     perc_txt_encoder.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     
     #Give more options if the user wants to finish everything after training
-    training_summary_checkbox.change(fn=checkbox_swap, inputs=training_summary_checkbox, outputs=[training_summary_token_message, training_summary_token, training_summary_model_name],queue=False, show_progress=False)
+    training_summary_checkbox.change(fn=checkbox_swap, inputs=training_summary_checkbox, outputs=[training_summary_token_message, training_summary_token, training_summary_model_name, training_summary_where_to_upload],queue=False, show_progress=False)
     #Add a message for while it is in training
     train_btn.click(lambda:gr.update(visible=True), inputs=None, outputs=training_ongoing)
     
     #The main train function
-    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[training_summary_model_name]+[training_summary_checkbox]+[training_summary_token]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, training_ongoing, completed_training], queue=False)
+    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[training_summary_where_to_upload]+[training_summary_model_name]+[training_summary_checkbox]+[training_summary_token]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, training_ongoing, completed_training], queue=False)
     
     #Button to generate an image from your trained model after training
     generate_button.click(fn=generate, inputs=prompt, outputs=result_image, queue=False)
