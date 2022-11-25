@@ -172,10 +172,20 @@ def train(*inputs):
     with zipfile.ZipFile('diffusers_model.zip', 'w', zipfile.ZIP_DEFLATED) as zipf:
         zipdir('output_model/', zipf)
     print("Training completed!")
-    if os.path.exists("intraining.lock"): os.remove("intraining.lock")
-    trained_file = open("hastrained.success", "w")
-    trained_file.close()
-    if(remove_attribution_after):
+
+    if(not remove_attribution_after):
+        if os.path.exists("intraining.lock"): os.remove("intraining.lock")
+        trained_file = open("hastrained.success", "w")
+        trained_file.close()
+        return [
+            gr.update(visible=True, value=["diffusers_model.zip"]), #result
+            gr.update(visible=True), #try_your_model
+            gr.update(visible=True), #push_to_hub
+            gr.update(visible=True), #convert_button
+            gr.update(visible=False), #training_ongoing
+            gr.update(visible=True) #completed_training
+        ]
+    else:
         hf_token = inputs[-5]
         model_name = inputs[-7]
         where_to_upload = inputs[-8]
@@ -184,14 +194,6 @@ def train(*inputs):
         headers = { "authorization" : f"Bearer {hf_token}"}
         body = {'flavor': 'cpu-basic'}
         requests.post(hardware_url, json = body, headers=headers)
-    return [
-        gr.update(visible=True, value=["diffusers_model.zip"]), #result
-        gr.update(visible=True), #try_your_model
-        gr.update(visible=True), #push_to_hub
-        gr.update(visible=True), #convert_button
-        gr.update(visible=False), #training_ongoing
-        gr.update(visible=True) #completed_training
-    ]
 
 def generate(prompt):
     torch.cuda.empty_cache()
