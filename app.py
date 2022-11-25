@@ -415,7 +415,7 @@ with gr.Blocks(css=css) as demo:
     
     train_btn = gr.Button("Start Training")
     
-    training_ongoing = gr.Markdown("## Training is ongoing ⌛... You can close this tab if you like or just wait. If you did not check `Remove GPU After`, you can come back here to try your model and upload it after training. Don't forget to remove the GPU attribution after you are done. ", visible=False)
+    training_ongoing = gr.Markdown("## Training is ongoing ⌛... You can close this tab if you like or just wait. If you did not check the `Remove GPU After training`, you can come back here to try your model and upload it after training. Don't forget to remove the GPU attribution after you are done. ", visible=False)
     
     #Post-training UI
     completed_training = gr.Markdown('''# ✅ Training completed. 
