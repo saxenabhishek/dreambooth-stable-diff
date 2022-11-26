@@ -482,7 +482,8 @@ with gr.Blocks(css=css) as demo:
     perc_txt_encoder.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     
     #Give more options if the user wants to finish everything after training
-    training_summary_checkbox.change(fn=checkbox_swap, inputs=training_summary_checkbox, outputs=[training_summary_token_message, training_summary_token, training_summary_model_name, training_summary_where_to_upload],queue=False, show_progress=False)
+    if(is_spaces):
+        training_summary_checkbox.change(fn=checkbox_swap, inputs=training_summary_checkbox, outputs=[training_summary_token_message, training_summary_token, training_summary_model_name, training_summary_where_to_upload],queue=False, show_progress=False)
     #Add a message for while it is in training
     train_btn.click(lambda:gr.update(visible=True), inputs=None, outputs=training_ongoing)
     
