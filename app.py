@@ -181,7 +181,7 @@ def train(*inputs):
     if(not remove_attribution_after):
         print("Archiving model file...")
         with tarfile.open("diffusers_model.tar", "w") as tar:
-            tar.add("diffusers_model", arcname=os.path.basename("diffusers_model"))
+            tar.add("output_model", arcname=os.path.basename("output_model"))
         if os.path.exists("intraining.lock"): os.remove("intraining.lock")
         trained_file = open("hastrained.success", "w")
         trained_file.close()
