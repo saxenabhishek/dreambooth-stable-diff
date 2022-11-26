@@ -69,10 +69,7 @@ def count_files(*inputs):
     if(uses_custom):
         Training_Steps = int(inputs[-3])
     else:
-        if(type_of_thing == "person"):
-            Training_Steps = file_counter*200*2
-        else:
-            Training_Steps = file_counter*200
+        Training_Steps = file_counter*200
     if(is_spaces):
         summary_sentence = f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. The training should take around {round(Training_Steps/1.1, 2)} seconds, or {round((Training_Steps/1.1)/60, 2)} minutes.
         The setup, compression and uploading the model can take up to 20 minutes.<br>As the T4-Small GPU costs US$0.60 for 1h, <span style="font-size: 120%"><b>the estimated cost for this training is US${round((((Training_Steps/1.1)/3600)+0.3+0.1)*0.60, 2)}.</b></span><br><br>
