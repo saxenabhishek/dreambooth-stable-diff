@@ -434,18 +434,13 @@ with gr.Blocks(css=css) as demo:
     
     with gr.Box(visible=False) as training_summary:
         training_summary_text = gr.HTML("", visible=False, label="Training Summary")
-        if(is_spaces):
-            training_summary_checkbox = gr.Checkbox(label="Automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training", value=False)
-            training_summary_model_name = gr.Textbox(label="Name of your model", visible=False)
-            training_summary_where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], label="Upload to", visible=False)
-            training_summary_token_message = gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.", visible=False)            
-            training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="password", visible=False)
-        else:
-            training_summary_checkbox = False
-            training_summary_model_name = ''
-            training_summary_where_to_upload = "My person profile"
-            training_summary_token_message = ""
-            training_summary_token = ""
+        is_advanced_visible = True if is_spaces else False
+        training_summary_checkbox = gr.Checkbox(label="Automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training", value=False, visible=is_advanced_visible)
+        training_summary_model_name = gr.Textbox(label="Name of your model", visible=False)
+        training_summary_where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], label="Upload to", visible=False)
+        training_summary_token_message = gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.", visible=False)            
+        training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="password", visible=False)
+        
     train_btn = gr.Button("Start Training")
     
     training_ongoing = gr.Markdown("## Training is ongoing ⌛... You can close this tab if you like or just wait. If you did not check the `Remove GPU After training`, you can come back here to try your model and upload it after training. Don't forget to remove the GPU attribution after you are done. ", visible=False)
