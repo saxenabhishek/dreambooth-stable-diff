@@ -28,32 +28,40 @@ css = '''
 '''
 maximum_concepts = 3
 
-#Pre download the files even if we don't use it here
-model_to_load = snapshot_download(repo_id="multimodalart/sd-fine-tunable")
+#Pre download the files
+model_v1 = snapshot_download(repo_id="multimodalart/sd-fine-tunable")
+#model_v2 = snapshot_download(repo_id="stabilityai/stable-diffusion-2")
+model_v2_512 = snapshot_download(repo_id="stabilityai/stable-diffusion-2-base")
 safety_checker = snapshot_download(repo_id="multimodalart/sd-sc")
 
-def zipdir(path, ziph):
-    # ziph is zipfile handle
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            ziph.write(os.path.join(root, file), 
-                       os.path.relpath(os.path.join(root, file), 
-                                       os.path.join(path, '..')))
+model_to_load = model_v1
+
+#with zipfile.ZipFile("mix.zip", 'r') as zip_ref:
+#    zip_ref.extractall(".")
 
 def swap_text(option):
     mandatory_liability = "You must have the right to do so and you are liable for the images you use, example:"
     if(option == "object"):
         instance_prompt_example = "cttoy"
         freeze_for = 50
-        return [f"You are going to train `object`(s), upload 5-10 images of each object you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/cat-toy.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for]
+        return [f"You are going to train `object`(s), upload 5-10 images of each object you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/cat-toy.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for, gr.update(visible=False)]
     elif(option == "person"):
        instance_prompt_example = "julcto"
-       freeze_for = 100
-       return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name the files with a unique word that represent your concept (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for]
+       freeze_for = 65
+       return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name the files with a unique word that represent your concept (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for, gr.update(visible=False)]
     elif(option == "style"):
         instance_prompt_example = "trsldamrl"
         freeze_for = 10
-        return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your files with a unique word that represent your concept (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for]
+        return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your files with a unique word that represent your concept (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for, gr.update(visible=False)]
+
+def swap_base_model(selected_model):
+    global model_to_load
+    if(selected_model == "v1-5"):
+        model_to_load = model_v1
+    elif(selected_model == "v2-768"):
+        model_to_load = model_v2
+    else:
+        model_to_load = model_v2_512
 
 def count_files(*inputs):
     file_counter = 0
@@ -69,10 +77,7 @@ def count_files(*inputs):
     if(uses_custom):
         Training_Steps = int(inputs[-3])
     else:
-        if(type_of_thing == "person"):
-            Training_Steps = file_counter*200*2
-        else:
-            Training_Steps = file_counter*200
+        Training_Steps = file_counter*200
     if(is_spaces):
         summary_sentence = f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. The training should take around {round(Training_Steps/1.1, 2)} seconds, or {round((Training_Steps/1.1)/60, 2)} minutes.
         The setup, compression and uploading the model can take up to 20 minutes.<br>As the T4-Small GPU costs US$0.60 for 1h, <span style="font-size: 120%"><b>the estimated cost for this training is US${round((((Training_Steps/1.1)/3600)+0.3+0.1)*0.60, 2)}.</b></span><br><br>
@@ -81,6 +86,13 @@ def count_files(*inputs):
         summary_sentence = f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps.<br><br>'''
         
     return([gr.update(visible=True), gr.update(visible=True, value=summary_sentence)])
+
+def update_steps(*files_list):
+    file_counter = 0
+    for i, files in enumerate(files_list):
+        if(files):
+            file_counter+=len(files)
+    return(gr.update(value=file_counter*200))
 
 def pad_image(image):
     w, h = image.size
@@ -101,7 +113,9 @@ def train(*inputs):
     
     torch.cuda.empty_cache()
     if 'pipe' in globals():
+        global pipe, pipe_is_set
         del pipe
+        pipe_is_set = False
         gc.collect()
         
     if os.path.exists("output_model"): shutil.rmtree('output_model')
@@ -130,9 +144,9 @@ def train(*inputs):
     os.makedirs('output_model',exist_ok=True)
     uses_custom = inputs[-1] 
     type_of_thing = inputs[-4]
-    
     remove_attribution_after = inputs[-6]
-   
+    experimental_face_improvement = inputs[-9]
+    which_model = inputs[-10]
     if(uses_custom):
         Training_Steps = int(inputs[-3])
         Train_text_encoder_for = int(inputs[-2])
@@ -140,51 +154,100 @@ def train(*inputs):
         Training_Steps = file_counter*200
         if(type_of_thing == "object"):
             Train_text_encoder_for=30
-        elif(type_of_thing == "person"):
-            Train_text_encoder_for=60
         elif(type_of_thing == "style"):
             Train_text_encoder_for=15
+        elif(type_of_thing == "person"):
+            Train_text_encoder_for=65
     
-    class_data_dir = None
     stptxt = int((Training_Steps*Train_text_encoder_for)/100)
-    args_general = argparse.Namespace(
-                image_captions_filename = True,
-                train_text_encoder = True,
-                stop_text_encoder_training = stptxt,
-                save_n_steps = 0,
-                pretrained_model_name_or_path = model_to_load,
-                instance_data_dir="instance_images",
-                class_data_dir=class_data_dir,
-                output_dir="output_model",
-                instance_prompt="",
-                seed=42,
-                resolution=512,
-                mixed_precision="fp16",
-                train_batch_size=1,
-                gradient_accumulation_steps=1,
-                use_8bit_adam=True,
-                learning_rate=2e-6,
-                lr_scheduler="polynomial",
-                lr_warmup_steps = 0,
-                max_train_steps=Training_Steps,     
-    )
-    print("Starting training...")
-    lock_file = open("intraining.lock", "w")
-    lock_file.close()
-    run_training(args_general)
+    if (type_of_thing == "object" or type_of_thing == "style" or (type_of_thing == "person" and not experimental_face_improvement)):
+        args_general = argparse.Namespace(
+            image_captions_filename = True,
+            train_text_encoder = True if stptxt > 0 else False,
+            stop_text_encoder_training = stptxt,
+            save_n_steps = 0,
+            pretrained_model_name_or_path = model_to_load,
+            instance_data_dir="instance_images",
+            class_data_dir=None,
+            output_dir="output_model",
+            instance_prompt="",
+            seed=42,
+            resolution=512,
+            mixed_precision="fp16",
+            train_batch_size=1,
+            gradient_accumulation_steps=1,
+            use_8bit_adam=True,
+            learning_rate=2e-6,
+            lr_scheduler="polynomial",
+            lr_warmup_steps = 0,
+            max_train_steps=Training_Steps,     
+        )
+        print("Starting single training...")
+        lock_file = open("intraining.lock", "w")
+        lock_file.close()
+        run_training(args_general)
+    else:
+        args_txt_encoder = argparse.Namespace(
+            image_captions_filename=True,
+            train_text_encoder=True,
+            dump_only_text_encoder=True,
+            pretrained_model_name_or_path=model_to_load,
+            save_n_steps=0,
+            instance_data_dir="instance_images",
+            class_data_dir="Mix",
+            output_dir="output_model",
+            with_prior_preservation=True,
+            prior_loss_weight=1.0,
+            instance_prompt="",
+            seed=42,
+            resolution=512,
+            mixed_precision="fp16",
+            train_batch_size=1,
+            gradient_accumulation_steps=1,
+            gradient_checkpointing=True,
+            use_8bit_adam=True,
+            learning_rate=2e-6,
+            lr_scheduler="polynomial",
+            lr_warmup_steps = 0,
+            max_train_steps=stptxt,
+            num_class_images=200
+        )
+        args_unet = argparse.Namespace(
+            image_captions_filename=True,
+            train_only_unet=True,
+            save_n_steps=0,
+            pretrained_model_name_or_path=model_to_load,
+            instance_data_dir="instance_images",
+            output_dir="output_model",
+            instance_prompt="",
+            seed=42,
+            resolution=512,
+            mixed_precision="fp16",
+            train_batch_size=1,
+            gradient_accumulation_steps=1,
+            use_8bit_adam=True,
+            learning_rate=2e-6,
+            lr_scheduler="polynomial",
+            lr_warmup_steps = 0,
+            max_train_steps=Training_Steps,
+        )
+        print("Starting multi-training...")
+        lock_file = open("intraining.lock", "w")
+        lock_file.close()
+        run_training(args_txt_encoder)
+        run_training(args_unet)
     gc.collect()
     torch.cuda.empty_cache()
-    print("Adding Safety Checker to the model...")
-    shutil.copytree(f"{safety_checker}/feature_extractor", "output_model/feature_extractor")
-    shutil.copytree(f"{safety_checker}/safety_checker", "output_model/safety_checker")
-    shutil.copy(f"model_index.json", "output_model/model_index.json")
+    if(which_model == "v1-5"):
+        print("Adding Safety Checker to the model...")
+        shutil.copytree(f"{safety_checker}/feature_extractor", "output_model/feature_extractor")
+        shutil.copytree(f"{safety_checker}/safety_checker", "output_model/safety_checker")
+        shutil.copy(f"model_index.json", "output_model/model_index.json")
     
-    #with zipfile.ZipFile('diffusers_model.zip', 'w', zipfile.ZIP_DEFLATED) as zipf:
-    #    zipdir('output_model/', zipf)
     if(not remove_attribution_after):
         print("Archiving model file...")
         with tarfile.open("diffusers_model.tar", "w") as tar:
-            tar.add("diffusers_model", arcname=os.path.basename("diffusers_model"))
+            tar.add("output_model", arcname=os.path.basename("output_model"))
         if os.path.exists("intraining.lock"): os.remove("intraining.lock")
         trained_file = open("hastrained.success", "w")
         trained_file.close()
@@ -201,22 +264,27 @@ def train(*inputs):
         hf_token = inputs[-5]
         model_name = inputs[-7]
         where_to_upload = inputs[-8]
-        push(model_name, where_to_upload, hf_token, True)
+        push(model_name, where_to_upload, hf_token, which_model, True)
         hardware_url = f"https://huggingface.co/spaces/{os.environ['SPACE_ID']}/hardware"
         headers = { "authorization" : f"Bearer {hf_token}"}
         body = {'flavor': 'cpu-basic'}
         requests.post(hardware_url, json = body, headers=headers)
 
-def generate(prompt):
+pipe_is_set = False
+def generate(prompt, steps):
     torch.cuda.empty_cache()
     from diffusers import StableDiffusionPipeline
-    global pipe
-    pipe = StableDiffusionPipeline.from_pretrained("./output_model", torch_dtype=torch.float16)
-    pipe = pipe.to("cuda")
-    image = pipe(prompt).images[0]  
+    global pipe_is_set
+    if(not pipe_is_set):
+        global pipe
+        pipe = StableDiffusionPipeline.from_pretrained("./output_model", torch_dtype=torch.float16)
+        pipe = pipe.to("cuda")
+        pipe_is_set = True
+        
+    image = pipe(prompt, num_inference_steps=steps).images[0]  
     return(image)
     
-def push(model_name, where_to_upload, hf_token, comes_from_automated=False):
+def push(model_name, where_to_upload, hf_token, which_model, comes_from_automated=False):
     if(not os.path.exists("model.ckpt")):
         convert("output_model", "model.ckpt")
     from huggingface_hub import HfApi, HfFolder, CommitOperationAdd
@@ -250,7 +318,7 @@ license: creativeml-openrail-m
 tags:
 - text-to-image
 ---
-### {model_name} Dreambooth model trained by {api.whoami(token=hf_token)["name"]} with [Hugging Face Dreambooth Training Space](https://huggingface.co/spaces/multimodalart/dreambooth-training)
+### {model_name} Dreambooth model trained by {api.whoami(token=hf_token)["name"]} with [Hugging Face Dreambooth Training Space](https://huggingface.co/spaces/multimodalart/dreambooth-training) with the {which_model} base model
 
 You run your new concept via `diffusers` [Colab Notebook for Inference](https://colab.research.google.com/github/huggingface/notebooks/blob/main/diffusers/sd_dreambooth_inference.ipynb). Don't forget to use the concept prompts! 
 
@@ -371,21 +439,24 @@ with gr.Blocks(css=css) as demo:
             top_description = gr.HTML(f'''
                     <div class="gr-prose" style="max-width: 80%">
                     <h2>You have successfully cloned the Dreambooth Training Space locally 🎉</h2>
-                    <p>If you are having problems with the requirements, try installing xformers with `%pip install git+https://github.com/facebookresearch/xformers@1d31a3a#egg=xformers`</p> 
+                    <p>Do a <code>pip install requirements-local.txt</code></p> 
                     </div>
                 ''')
-    gr.Markdown("# Dreambooth Training UI")
-    gr.Markdown("Customize Stable Diffusion by training it on a few examples of concepts, up to 3 concepts on the same model. This Space is based on TheLastBen's [fast-DreamBooth Colab](https://colab.research.google.com/github/TheLastBen/fast-stable-diffusion/blob/main/fast-DreamBooth.ipynb) with [🧨 diffusers](https://github.com/huggingface/diffusers)")
+    gr.Markdown("# Dreambooth Training UI 💭")
+    gr.Markdown("Customize Stable Diffusion v1 or v2 (new!) by training it on a few examples of concepts, up to 3 concepts on the same model. This Space is based on TheLastBen's [fast-DreamBooth Colab](https://colab.research.google.com/github/TheLastBen/fast-stable-diffusion/blob/main/fast-DreamBooth.ipynb) with [🧨 diffusers](https://github.com/huggingface/diffusers)")
     
     with gr.Row() as what_are_you_training:
         type_of_thing = gr.Dropdown(label="What would you like to train?", choices=["object", "person", "style"], value="object", interactive=True)
-
+        base_model_to_use = gr.Dropdown(label="Which base model would you like to use?", choices=["v1-5", "v2-512"], value="v1-5", interactive=True)
+    
     #Very hacky approach to emulate dynamically created Gradio components   
     with gr.Row() as upload_your_concept:
         with gr.Column():
-            thing_description = gr.Markdown("You are going to train an `object`, please upload 5-10 images of the object you are planning on training on from different angles/perspectives. You must have the right to do so and you are liable for the images you use, example:")
+            thing_description = gr.Markdown("You are going to train an `object`, please upload 5-10 images of the object you are planning on training on from different angles/perspectives. You must have the right to do so and you are liable for the images you use, example")
+            thing_experimental = gr.Checkbox(label="Improve faces (experimental) - takes 1.5x times training, can improve if you are training people's faces", visible=False, value=False)
             thing_image_example = gr.HTML('''<img src="file/cat-toy.png" />''')
             things_naming = gr.Markdown("You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `cttoy` here). Images will be automatically cropped to 512x512.")
+            
         with gr.Column():
             file_collection = []
             concept_collection = []
@@ -431,24 +502,19 @@ with gr.Blocks(css=css) as demo:
                   
     with gr.Accordion("Custom Settings", open=False):
         swap_auto_calculated = gr.Checkbox(label="Use custom settings")
-        gr.Markdown("If not checked, the number of steps and % of frozen encoder will be tuned automatically according to the amount of images you upload and whether you are training an `object`, `person` or `style` as follows: The number of steps is calculated by number of images uploaded multiplied by 20. The text-encoder is frozen after 10% of the steps for a style, 30% of the steps for an object and is fully trained for persons.")
+        gr.Markdown("If not checked, the number of steps and % of frozen encoder will be tuned automatically according to the amount of images you upload and whether you are training an `object`, `person` or `style` as follows: The number of steps is calculated by number of images uploaded multiplied by 200. The text-encoder is frozen after 10% of the steps for a style, 30% of the steps for an object and 65% trained for persons.")
         steps = gr.Number(label="How many steps", value=800)
         perc_txt_encoder = gr.Number(label="Percentage of the training steps the text-encoder should be trained as well", value=30)
-    
+        
     with gr.Box(visible=False) as training_summary:
         training_summary_text = gr.HTML("", visible=False, label="Training Summary")
-        if(is_spaces):
-            training_summary_checkbox = gr.Checkbox(label="Automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training", value=False)
-            training_summary_model_name = gr.Textbox(label="Name of your model", visible=False)
-            training_summary_where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], label="Upload to", visible=False)
-            training_summary_token_message = gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.", visible=False)            
-            training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="password", visible=False)
-        else:
-            training_summary_checkbox = False
-            training_summary_model_name = ''
-            training_summary_where_to_upload = "My person profile"
-            training_summary_token_message = ""
-            training_summary_token = ""
+        is_advanced_visible = True if is_spaces else False
+        training_summary_checkbox = gr.Checkbox(label="Automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training", value=False, visible=is_advanced_visible)
+        training_summary_model_name = gr.Textbox(label="Name of your model", visible=False)
+        training_summary_where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], label="Upload to", visible=False)
+        training_summary_token_message = gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.", visible=False)            
+        training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="password", visible=False)
+        
     train_btn = gr.Button("Start Training")
     
     training_ongoing = gr.Markdown("## Training is ongoing ⌛... You can close this tab if you like or just wait. If you did not check the `Remove GPU After training`, you can come back here to try your model and upload it after training. Don't forget to remove the GPU attribution after you are done. ", visible=False)
@@ -462,6 +528,7 @@ with gr.Blocks(css=css) as demo:
             gr.Markdown("## Try your model")
             prompt = gr.Textbox(label="Type your prompt")
             result_image = gr.Image()
+            inference_steps = gr.Slider(minimum=1, maximum=150, value=50, step=1)
             generate_button = gr.Button("Generate Image")
         
         with gr.Box(visible=False) as push_to_hub:
@@ -478,11 +545,16 @@ with gr.Blocks(css=css) as demo:
     convert_button = gr.Button("Convert to CKPT", visible=False)
     
     #Swap the examples and the % of text encoder trained depending if it is an object, person or style
-    type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder], queue=False, show_progress=False)
+    type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder, thing_experimental], queue=False, show_progress=False)
     
+    #Swap the base model
+    base_model_to_use.change(fn=swap_base_model, inputs=base_model_to_use, outputs=[])
+
     #Update the summary box below the UI according to how many images are uploaded and whether users are using custom settings or not 
     for file in file_collection:
+        file.change(fn=update_steps,inputs=file_collection, outputs=steps)
         file.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
+        
     steps.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     perc_txt_encoder.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     
@@ -493,12 +565,12 @@ with gr.Blocks(css=css) as demo:
     train_btn.click(lambda:gr.update(visible=True), inputs=None, outputs=training_ongoing)
     
     #The main train function
-    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[training_summary_where_to_upload]+[training_summary_model_name]+[training_summary_checkbox]+[training_summary_token]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, training_ongoing, completed_training], queue=False)
+    train_btn.click(fn=train, inputs=is_visible+concept_collection+file_collection+[base_model_to_use]+[thing_experimental]+[training_summary_where_to_upload]+[training_summary_model_name]+[training_summary_checkbox]+[training_summary_token]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[result, try_your_model, push_to_hub, convert_button, training_ongoing, completed_training], queue=False)
     
     #Button to generate an image from your trained model after training
-    generate_button.click(fn=generate, inputs=prompt, outputs=result_image, queue=False)
+    generate_button.click(fn=generate, inputs=[prompt, inference_steps], outputs=result_image, queue=False)
     #Button to push the model to the Hugging Face Hub
-    push_button.click(fn=push, inputs=[model_name, where_to_upload, hf_token], outputs=[success_message_upload, result], queue=False)
+    push_button.click(fn=push, inputs=[model_name, where_to_upload, hf_token, base_model_to_use], outputs=[success_message_upload, result], queue=False)
     #Button to convert the model to ckpt format 
     convert_button.click(fn=convert_to_ckpt, inputs=[], outputs=result, queue=False)
     

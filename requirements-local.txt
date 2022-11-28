@@ -15,4 +15,4 @@ bitsandbytes
 python-slugify
 requests
 tensorboard
-https://github.com/apolinario/xformers/releases/download/0.0.2/xformers-0.0.14.dev0-cp38-cp38-linux_x86_64.whl
+pip install git+https://github.com/facebookresearch/xformers@7e4c02c#egg=xformers

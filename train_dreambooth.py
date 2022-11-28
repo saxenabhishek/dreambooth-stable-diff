@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 import subprocess
 import sys
-import gc 
+import gc
 
 import torch
 import torch.nn.functional as F
@@ -54,7 +54,7 @@ def parse_args():
         "--class_data_dir",
         type=str,
         default=None,
-        required=False,
+        #required=False,
         help="A folder containing the training data of class images.",
     )
     parser.add_argument(
@@ -334,6 +334,7 @@ class DreamBoothDataset(Dataset):
             pt=pt.replace("_"," ")
             pt=pt.replace("(","")
             pt=pt.replace(")","")
+            pt=pt.replace("-","")
             instance_prompt = pt
             sys.stdout.write(" [0;32m" +instance_prompt+" [0m")
             sys.stdout.flush()
@@ -746,7 +747,7 @@ def run_training(args_imported):
                 pipeline.text_encoder.save_pretrained(frz_dir)
                          
             if args.save_n_steps >= 200:
-               if global_step < args.max_train_steps-100 and global_step+1==i:
+               if global_step < args.max_train_steps and global_step+1==i:
                   ckpt_name = "_step_" + str(global_step+1)
                   save_dir = Path(args.output_dir+ckpt_name)
                   save_dir=str(save_dir)
@@ -770,6 +771,7 @@ def run_training(args_imported):
                         subprocess.call('cp -f '+frz_dir +'/*.* '+ save_dir+'/text_encoder', shell=True)                     
                      chkpth=args.Session_dir+"/"+inst+".ckpt"
                      subprocess.call('python /content/diffusers/scripts/convert_diffusers_to_original_stable_diffusion.py --model_path ' + save_dir + ' --checkpoint_path ' + chkpth + ' --half', shell=True)
+                     subprocess.call('rm -r '+ save_dir, shell=True)
                      i=i+args.save_n_steps
             
         accelerator.wait_for_everyone()
@@ -819,3 +821,4 @@ def run_training(args_imported):
 if __name__ == "__main__":
     pass
     #main()
+
