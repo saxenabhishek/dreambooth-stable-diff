@@ -7,6 +7,7 @@ from typing import Optional
 import subprocess
 import sys
 import gc
+import random
 
 import torch
 import torch.nn.functional as F
@@ -301,6 +302,7 @@ class DreamBoothDataset(Dataset):
             self.class_data_root = Path(class_data_root)
             self.class_data_root.mkdir(parents=True, exist_ok=True)
             self.class_images_path = list(self.class_data_root.iterdir())
+            random.shuffle(self.class_images_path)
             self.num_class_images = len(self.class_images_path)
             self._length = max(self.num_class_images, self.num_instance_images)
             self.class_prompt = class_prompt

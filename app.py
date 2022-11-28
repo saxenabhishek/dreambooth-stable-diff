@@ -36,30 +36,30 @@ safety_checker = snapshot_download(repo_id="multimodalart/sd-sc")
 
 model_to_load = model_v1
 
-#with zipfile.ZipFile("mix.zip", 'r') as zip_ref:
-#    zip_ref.extractall(".")
+with zipfile.ZipFile("mix.zip", 'r') as zip_ref:
+    zip_ref.extractall(".")
 
 def swap_text(option):
     mandatory_liability = "You must have the right to do so and you are liable for the images you use, example:"
     if(option == "object"):
         instance_prompt_example = "cttoy"
-        freeze_for = 50
+        freeze_for = 30
         return [f"You are going to train `object`(s), upload 5-10 images of each object you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/cat-toy.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for, gr.update(visible=False)]
     elif(option == "person"):
        instance_prompt_example = "julcto"
-       freeze_for = 65
-       return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name the files with a unique word that represent your concept (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for, gr.update(visible=False)]
+       freeze_for = 70
+       return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for, gr.update(visible=True)]
     elif(option == "style"):
         instance_prompt_example = "trsldamrl"
         freeze_for = 10
-        return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your files with a unique word that represent your concept (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for, gr.update(visible=False)]
+        return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for, gr.update(visible=False)]
 
 def swap_base_model(selected_model):
     global model_to_load
     if(selected_model == "v1-5"):
         model_to_load = model_v1
-    elif(selected_model == "v2-768"):
-        model_to_load = model_v2
+    #elif(selected_model == "v2-768"):
+    #    model_to_load = model_v2
     else:
         model_to_load = model_v2_512
 
@@ -78,6 +78,10 @@ def count_files(*inputs):
         Training_Steps = int(inputs[-3])
     else:
         Training_Steps = file_counter*200
+        if(Training_Steps > 2400):
+            Training_Steps=2400
+        elif(Training_Steps < 1400):
+            Training_Steps=1400
     if(is_spaces):
         summary_sentence = f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. The training should take around {round(Training_Steps/1.1, 2)} seconds, or {round((Training_Steps/1.1)/60, 2)} minutes.
         The setup, compression and uploading the model can take up to 20 minutes.<br>As the T4-Small GPU costs US$0.60 for 1h, <span style="font-size: 120%"><b>the estimated cost for this training is US${round((((Training_Steps/1.1)/3600)+0.3+0.1)*0.60, 2)}.</b></span><br><br>
@@ -151,14 +155,21 @@ def train(*inputs):
         Training_Steps = int(inputs[-3])
         Train_text_encoder_for = int(inputs[-2])
     else:
-        Training_Steps = file_counter*200
         if(type_of_thing == "object"):
             Train_text_encoder_for=30
+            
         elif(type_of_thing == "style"):
             Train_text_encoder_for=15
+            
         elif(type_of_thing == "person"):
-            Train_text_encoder_for=65
-    
+            Train_text_encoder_for=75
+        
+        Training_Steps = file_counter*200
+        if(Training_Steps > 2400):
+            Training_Steps=2400
+        elif(Training_Steps < 1400):
+            Training_Steps=1400
+
     stptxt = int((Training_Steps*Train_text_encoder_for)/100)
     if (type_of_thing == "object" or type_of_thing == "style" or (type_of_thing == "person" and not experimental_face_improvement)):
         args_general = argparse.Namespace(
@@ -187,12 +198,12 @@ def train(*inputs):
         lock_file.close()
         run_training(args_general)
     else:
-        args_txt_encoder = argparse.Namespace(
-            image_captions_filename=True,
-            train_text_encoder=True,
-            dump_only_text_encoder=True,
-            pretrained_model_name_or_path=model_to_load,
-            save_n_steps=0,
+        args_general = argparse.Namespace(
+            image_captions_filename = True,
+            train_text_encoder = True if stptxt > 0 else False,
+            stop_text_encoder_training = stptxt,
+            save_n_steps = 0,
+            pretrained_model_name_or_path = model_to_load,
             instance_data_dir="instance_images",
             class_data_dir="Mix",
             output_dir="output_model",
@@ -204,38 +215,17 @@ def train(*inputs):
             mixed_precision="fp16",
             train_batch_size=1,
             gradient_accumulation_steps=1,
-            gradient_checkpointing=True,
-            use_8bit_adam=True,
-            learning_rate=2e-6,
-            lr_scheduler="polynomial",
-            lr_warmup_steps = 0,
-            max_train_steps=stptxt,
-            num_class_images=200
-        )
-        args_unet = argparse.Namespace(
-            image_captions_filename=True,
-            train_only_unet=True,
-            save_n_steps=0,
-            pretrained_model_name_or_path=model_to_load,
-            instance_data_dir="instance_images",
-            output_dir="output_model",
-            instance_prompt="",
-            seed=42,
-            resolution=512,
-            mixed_precision="fp16",
-            train_batch_size=1,
-            gradient_accumulation_steps=1,
             use_8bit_adam=True,
             learning_rate=2e-6,
             lr_scheduler="polynomial",
             lr_warmup_steps = 0,
             max_train_steps=Training_Steps,
+            num_class_images=200,
         )
         print("Starting multi-training...")
         lock_file = open("intraining.lock", "w")
         lock_file.close()
-        run_training(args_txt_encoder)
-        run_training(args_unet)
+        run_training(args_general)
     gc.collect()
     torch.cuda.empty_cache()
     if(which_model == "v1-5"):
@@ -453,7 +443,7 @@ with gr.Blocks(css=css) as demo:
     with gr.Row() as upload_your_concept:
         with gr.Column():
             thing_description = gr.Markdown("You are going to train an `object`, please upload 5-10 images of the object you are planning on training on from different angles/perspectives. You must have the right to do so and you are liable for the images you use, example")
-            thing_experimental = gr.Checkbox(label="Improve faces (experimental) - takes 1.5x times training, can improve if you are training people's faces", visible=False, value=False)
+            thing_experimental = gr.Checkbox(label="Improve faces (prior preservation) - can take longer training but can improve faces", visible=False, value=False)
             thing_image_example = gr.HTML('''<img src="file/cat-toy.png" />''')
             things_naming = gr.Markdown("You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `cttoy` here). Images will be automatically cropped to 512x512.")
             
@@ -502,8 +492,8 @@ with gr.Blocks(css=css) as demo:
                   
     with gr.Accordion("Custom Settings", open=False):
         swap_auto_calculated = gr.Checkbox(label="Use custom settings")
-        gr.Markdown("If not checked, the number of steps and % of frozen encoder will be tuned automatically according to the amount of images you upload and whether you are training an `object`, `person` or `style` as follows: The number of steps is calculated by number of images uploaded multiplied by 200. The text-encoder is frozen after 10% of the steps for a style, 30% of the steps for an object and 65% trained for persons.")
-        steps = gr.Number(label="How many steps", value=800)
+        gr.Markdown("If not checked, the % of frozen encoder will be tuned automatically to whether you are training an `object`, `person` or `style`. The text-encoder is frozen after 10% of the steps for a style, 30% of the steps for an object and 75% trained for persons. The number of steps varies between 1400 and 2400 depending on how many images uploaded. If you see too many artifacts in your output, it means it may have overfit and you need less steps. If your results aren't really what you wanted, it may be underfitting and you need more steps.")
+        steps = gr.Number(label="How many steps", value=2400)
         perc_txt_encoder = gr.Number(label="Percentage of the training steps the text-encoder should be trained as well", value=30)
         
     with gr.Box(visible=False) as training_summary:
@@ -552,7 +542,7 @@ with gr.Blocks(css=css) as demo:
 
     #Update the summary box below the UI according to how many images are uploaded and whether users are using custom settings or not 
     for file in file_collection:
-        file.change(fn=update_steps,inputs=file_collection, outputs=steps)
+        #file.change(fn=update_steps,inputs=file_collection, outputs=steps)
         file.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
         
     steps.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
