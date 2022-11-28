@@ -31,7 +31,7 @@ maximum_concepts = 3
 #Pre download the files
 model_v1 = snapshot_download(repo_id="multimodalart/sd-fine-tunable")
 #model_v2 = snapshot_download(repo_id="stabilityai/stable-diffusion-2")
-model_v2_512 = snapshot_download(repo_id="stabilityai/stable-diffusion-2-base")
+model_v2_512 = snapshot_download(repo_id="stabilityai/stable-diffusion-2-base", revision="fp16")
 safety_checker = snapshot_download(repo_id="multimodalart/sd-sc")
 
 model_to_load = model_v1
