@@ -536,11 +536,11 @@ with gr.Blocks(css=css) as demo:
     with gr.Box(visible=False) as training_summary:
         training_summary_text = gr.HTML("", visible=True, label="Training Summary")
         is_advanced_visible = True if is_spaces else False
-        training_summary_checkbox = gr.Checkbox(label="Automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training", value=False, visible=is_advanced_visible)
-        training_summary_model_name = gr.Textbox(label="Name of your model", visible=False)
-        training_summary_where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], label="Upload to", visible=False)
-        training_summary_token_message = gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.", visible=False)            
-        training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="password", visible=False)
+        training_summary_checkbox = gr.Checkbox(label="Automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training", value=True, visible=is_advanced_visible)
+        training_summary_model_name = gr.Textbox(label="Name of your model", visible=True)
+        training_summary_where_to_upload = gr.Dropdown(["My personal profile", "Public Library"], value="My personal profile", label="Upload to", visible=True)
+        training_summary_token_message = gr.Markdown("[A Hugging Face write access token](https://huggingface.co/settings/tokens), go to \"New token\" -> Role : Write. A regular read token won't work here.", visible=True)            
+        training_summary_token = gr.Textbox(label="Hugging Face Write Token", type="password", visible=True)
         
     train_btn = gr.Button("Start Training")
     if(is_shared_ui):
