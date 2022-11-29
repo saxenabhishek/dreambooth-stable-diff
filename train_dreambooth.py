@@ -710,10 +710,10 @@ def run_training(args_imported):
                 # Convert images to latent space
                 with torch.no_grad():
                     if args.cache_latents:
-                        latents = batch[0][0]
+                        latents_dist = batch[0][0]
                     else:
-                        latents = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist.sample()
-                    latents = latents * 0.18215
+                        latents_dist = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist
+                    latents = latents_dist.sample() * 0.18215
 
                 # Sample noise that we'll add to the latents
                 noise = torch.randn_like(latents)

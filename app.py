@@ -58,8 +58,8 @@ def swap_base_model(selected_model):
     global model_to_load
     if(selected_model == "v1-5"):
         model_to_load = model_v1
-    #elif(selected_model == "v2-768"):
-    #    model_to_load = model_v2
+    elif(selected_model == "v2-768"):
+        model_to_load = model_v2
     else:
         model_to_load = model_v2_512
 
@@ -171,8 +171,7 @@ def train(*inputs):
             Training_Steps=1400
 
     stptxt = int((Training_Steps*Train_text_encoder_for)/100)
-    #gradient_checkpointing = False if which_model == "v1-5" else True
-    gradient_checkpointing=False
+    gradient_checkpointing = False if which_model == "v1-5" else True
     resolution = 512 if which_model != "v2-768" else 768
     cache_latents = True if which_model != "v1-5" else False
     if (type_of_thing == "object" or type_of_thing == "style" or (type_of_thing == "person" and not experimental_face_improvement)):
@@ -445,7 +444,7 @@ with gr.Blocks(css=css) as demo:
     
     with gr.Row() as what_are_you_training:
         type_of_thing = gr.Dropdown(label="What would you like to train?", choices=["object", "person", "style"], value="object", interactive=True)
-        base_model_to_use = gr.Dropdown(label="Which base model would you like to use?", choices=["v1-5", "v2-512"], value="v1-5", interactive=True)
+        base_model_to_use = gr.Dropdown(label="Which base model would you like to use?", choices=["v1-5", "v2-512", "v2-768"], value="v1-5", interactive=True)
     
     #Very hacky approach to emulate dynamically created Gradio components   
     with gr.Row() as upload_your_concept:
