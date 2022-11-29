@@ -369,6 +369,11 @@ Sample pictures of:
     return [gr.update(visible=True, value=f"Successfully uploaded your model. Access it [here](https://huggingface.co/{model_id})"), gr.update(visible=True, value=["diffusers_model.tar", "model.ckpt"])]
 
 def convert_to_ckpt():
+    if 'pipe' in globals():
+        global pipe, pipe_is_set
+        del pipe
+        pipe_is_set = False
+        gc.collect()
     convert("output_model", "model.ckpt")
     return gr.update(visible=True, value=["diffusers_model.tar", "model.ckpt"])
 
