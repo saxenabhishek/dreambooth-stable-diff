@@ -30,7 +30,7 @@ css = '''
 maximum_concepts = 3
 
 #Pre download the files
-if(not is_shared_ui or not is_gpu_associated):
+if(not is_shared_ui and not is_gpu_associated):
     model_v1 = snapshot_download(repo_id="multimodalart/sd-fine-tunable")
     model_v2 = snapshot_download(repo_id="stabilityai/stable-diffusion-2")
     model_v2_512 = snapshot_download(repo_id="stabilityai/stable-diffusion-2-base")
@@ -58,7 +58,7 @@ def swap_text(option, base):
         return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. You can use services like <a style='text-decoration: underline' target='_blank' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}", freeze_for, gr.update(visible=False)]
 
 def swap_base_model(selected_model):
-    if(not is_shared_ui or not is_gpu_associated):
+    if(not is_shared_ui and not is_gpu_associated):
         global model_to_load
         if(selected_model == "v1-5"):
             model_to_load = model_v1
