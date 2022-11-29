@@ -39,7 +39,7 @@ model_to_load = model_v1
 with zipfile.ZipFile("mix.zip", 'r') as zip_ref:
     zip_ref.extractall(".")
 
-def swap_text(option):
+def swap_text(option, base):
     mandatory_liability = "You must have the right to do so and you are liable for the images you use, example:"
     if(option == "object"):
         instance_prompt_example = "cttoy"
@@ -48,6 +48,7 @@ def swap_text(option):
     elif(option == "person"):
        instance_prompt_example = "julcto"
        freeze_for = 70
+       show_prior_preservation = True if base != "v2-768" else False
        return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to 512x512.", freeze_for, gr.update(visible=True)]
     elif(option == "style"):
         instance_prompt_example = "trsldamrl"
@@ -74,6 +75,8 @@ def count_files(*inputs):
                 file_counter+=len(files)
     uses_custom = inputs[-1] 
     type_of_thing = inputs[-4]
+    seletected_model = inputs[-5]
+    experimental_faces = inputs[-6]
     if(uses_custom):
         Training_Steps = int(inputs[-3])
     else:
@@ -83,9 +86,19 @@ def count_files(*inputs):
         elif(Training_Steps < 1400):
             Training_Steps=1400
     if(is_spaces):
-        summary_sentence = f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. The training should take around {round(Training_Steps/1.1, 2)} seconds, or {round((Training_Steps/1.1)/60, 2)} minutes.
-        The setup, compression and uploading the model can take up to 20 minutes.<br>As the T4-Small GPU costs US$0.60 for 1h, <span style="font-size: 120%"><b>the estimated cost for this training is US${round((((Training_Steps/1.1)/3600)+0.3+0.1)*0.60, 2)}.</b></span><br><br>
-        If you check the box below the GPU attribution will automatically removed after training is done and the model is uploaded. If not, don't forget to come back here and swap the hardware back to CPU.<br><br>'''
+        if(seletected_model == "v1-5"):
+            its = 1.1
+            if(experimental_faces):
+                its = 1
+        elif(selected_model == "v2-512"):
+            its = 0.8
+            if(experimental_faces):
+                its = 0.7
+        elif(selected_model == "v2-768"):
+            its = 0.5
+        summary_sentence = f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. The training should take around {round(Training_Steps/its, 2)} seconds, or {round((Training_Steps/its)/60, 2)} minutes.
+            The setup, compression and uploading the model can take up to 20 minutes.<br>As the T4-Small GPU costs US$0.60 for 1h, <span style="font-size: 120%"><b>the estimated cost for this training is US${round((((Training_Steps/its)/3600)+0.3+0.1)*0.60, 2)}.</b></span><br><br>
+            If you check the box below the GPU attribution will automatically removed after training is done and the model is uploaded. If not, don't forget to come back here and swap the hardware back to CPU.<br><br>'''
     else:
         summary_sentence = f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps.<br><br>'''
         
@@ -548,7 +561,7 @@ with gr.Blocks(css=css) as demo:
     convert_button = gr.Button("Convert to CKPT", visible=False)
     
     #Swap the examples and the % of text encoder trained depending if it is an object, person or style
-    type_of_thing.change(fn=swap_text, inputs=[type_of_thing], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder, thing_experimental], queue=False, show_progress=False)
+    type_of_thing.change(fn=swap_text, inputs=[type_of_thing, base_model_to_use], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder, thing_experimental], queue=False, show_progress=False)
     
     #Swap the base model
     base_model_to_use.change(fn=swap_base_model, inputs=base_model_to_use, outputs=[])
@@ -556,10 +569,10 @@ with gr.Blocks(css=css) as demo:
     #Update the summary box below the UI according to how many images are uploaded and whether users are using custom settings or not 
     for file in file_collection:
         #file.change(fn=update_steps,inputs=file_collection, outputs=steps)
-        file.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
+        file.change(fn=count_files, inputs=file_collection+[thing_experimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
         
-    steps.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
-    perc_txt_encoder.change(fn=count_files, inputs=file_collection+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
+    steps.change(fn=count_files, inputs=file_collection+[thing_experimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
+    perc_txt_encoder.change(fn=count_files, inputs=file_collection+[thing_exprerimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     
     #Give more options if the user wants to finish everything after training
     if(is_spaces):
