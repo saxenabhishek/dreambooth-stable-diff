@@ -4,3 +4,4 @@ instance_images
 __pycache__
 intraining.lock
 hastrained.success
+diffusers_model.tar

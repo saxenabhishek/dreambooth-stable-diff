@@ -572,9 +572,7 @@ def run_training(args_imported):
         eps=args.adam_epsilon,
     )
 
-    noise_scheduler = DDPMScheduler(
-        beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000
-    )
+    noise_scheduler = DDPMScheduler.from_config(args.pretrained_model_name_or_path, subfolder="scheduler")
 
     train_dataset = DreamBoothDataset(
         instance_data_root=args.instance_data_dir,
@@ -760,7 +758,7 @@ def run_training(args_imported):
                     # Add the prior loss to the instance loss.
                     loss = loss + args.prior_loss_weight * prior_loss
                 else:
-                    loss = F.mse_loss(model_pred.float(), target.float(), reduction="none").mean([1, 2, 3]).mean()
+                    loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
 
                 accelerator.backward(loss)
                 if accelerator.sync_gradients:
