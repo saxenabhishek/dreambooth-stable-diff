@@ -1,0 +1,6 @@
+Mix
+output_model
+instance_images
+__pycache__
+intraining.lock
+hastrained.success
