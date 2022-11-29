@@ -128,6 +128,8 @@ def train(*inputs):
     if os.path.exists("model.ckpt"): os.remove("model.ckpt")
     if os.path.exists("hastrained.success"): os.remove("hastrained.success")
     file_counter = 0
+    which_model = inputs[-10]
+    resolution = 512 if which_model != "v2-768" else 768
     for i, input in enumerate(inputs):
         if(i < maximum_concepts-1):
             if(input):
@@ -139,7 +141,7 @@ def train(*inputs):
                 for j, file_temp in enumerate(files):
                     file = Image.open(file_temp.name)
                     image = pad_image(file)
-                    image = image.resize((512, 512))
+                    image = image.resize((resolution, resolution))
                     extension = file_temp.name.split(".")[1]
                     image = image.convert('RGB')
                     image.save(f'instance_images/{prompt}_({j+1}).jpg', format="JPEG", quality = 100)
@@ -150,7 +152,7 @@ def train(*inputs):
     type_of_thing = inputs[-4]
     remove_attribution_after = inputs[-6]
     experimental_face_improvement = inputs[-9]
-    which_model = inputs[-10]
+    
     if(uses_custom):
         Training_Steps = int(inputs[-3])
         Train_text_encoder_for = int(inputs[-2])
@@ -172,7 +174,6 @@ def train(*inputs):
 
     stptxt = int((Training_Steps*Train_text_encoder_for)/100)
     gradient_checkpointing = False if which_model == "v1-5" else True
-    resolution = 512 if which_model != "v2-768" else 768
     cache_latents = True if which_model != "v1-5" else False
     if (type_of_thing == "object" or type_of_thing == "style" or (type_of_thing == "person" and not experimental_face_improvement)):
         args_general = argparse.Namespace(
