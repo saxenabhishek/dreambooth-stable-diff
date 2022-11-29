@@ -19,6 +19,7 @@ from huggingface_hub import snapshot_download
 
 is_spaces = True if "SPACE_ID" in os.environ else False
 is_shared_ui = True if "IS_SHARED_UI" in os.environ else False
+is_gpu_associated = torch.cuda.is_available()
 
 css = '''
     .instruction{position: absolute; top: 0;right: 0;margin-top: 0px !important}
@@ -29,7 +30,7 @@ css = '''
 maximum_concepts = 3
 
 #Pre download the files
-if(not is_shared_ui):
+if(not is_shared_ui or not is_gpu_associated):
     model_v1 = snapshot_download(repo_id="multimodalart/sd-fine-tunable")
     model_v2 = snapshot_download(repo_id="stabilityai/stable-diffusion-2")
     model_v2_512 = snapshot_download(repo_id="stabilityai/stable-diffusion-2-base")
@@ -57,7 +58,7 @@ def swap_text(option, base):
         return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. You can use services like <a style='text-decoration: underline' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}", freeze_for, gr.update(visible=False)]
 
 def swap_base_model(selected_model):
-    if(not is_shared_ui):
+    if(not is_shared_ui or not is_gpu_associated):
         global model_to_load
         if(selected_model == "v1-5"):
             model_to_load = model_v1
@@ -447,12 +448,20 @@ with gr.Blocks(css=css) as demo:
                 </div>
             ''')
         elif(is_spaces):
-            top_description = gr.HTML(f'''
-                    <div class="gr-prose" style="max-width: 80%">
-                    <h2>You have successfully duplicated the Dreambooth Training Space 🎉</h2>
-                    <p>If you haven't already, <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}/settings">attribute a T4 GPU to it (via the Settings tab)</a> and run the training below. You will be billed by the minute from when you activate the GPU until when it is turned it off.</p> 
-                    </div>
-            ''')
+            if(is_gpu_associated):
+                top_description = gr.HTML(f'''
+                        <div class="gr-prose" style="max-width: 80%">
+                        <h2>You have successfully associated a GPU to the Dreambooth Training Space 🎉</h2>
+                        <p>Certify that you got a T4. You can now train your model! You will be billed by the minute from when you activated the GPU until when it is turned it off.</p> 
+                        </div>
+                ''')
+            else:
+                top_description = gr.HTML(f'''
+                        <div class="gr-prose" style="max-width: 80%">
+                        <h2>You have successfully duplicated the Dreambooth Training Space 🎉</h2>
+                        <p>There's only one step left before you can train your model: <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}/settings" style="text-decoration: underline">attribute a <b>T4 GPU</b> to it (via the Settings tab)</a> and run the training below. Other GPUs are not compatible for now. You will be billed by the minute from when you activate the GPU until when it is turned it off.</p> 
+                        </div>
+                ''')
         else:
             top_description = gr.HTML(f'''
                     <div class="gr-prose" style="max-width: 80%">
