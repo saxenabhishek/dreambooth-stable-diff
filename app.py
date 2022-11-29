@@ -30,7 +30,7 @@ maximum_concepts = 3
 
 #Pre download the files
 model_v1 = snapshot_download(repo_id="multimodalart/sd-fine-tunable")
-#model_v2 = snapshot_download(repo_id="stabilityai/stable-diffusion-2")
+model_v2 = snapshot_download(repo_id="stabilityai/stable-diffusion-2")
 model_v2_512 = snapshot_download(repo_id="stabilityai/stable-diffusion-2-base")
 safety_checker = snapshot_download(repo_id="multimodalart/sd-sc")
 
@@ -171,6 +171,10 @@ def train(*inputs):
             Training_Steps=1400
 
     stptxt = int((Training_Steps*Train_text_encoder_for)/100)
+    #gradient_checkpointing = False if which_model == "v1-5" else True
+    gradient_checkpointing=False
+    resolution = 512 if which_model != "v2-768" else 768
+    cache_latents = True if which_model != "v1-5" else False
     if (type_of_thing == "object" or type_of_thing == "style" or (type_of_thing == "person" and not experimental_face_improvement)):
         args_general = argparse.Namespace(
             image_captions_filename = True,
@@ -183,7 +187,7 @@ def train(*inputs):
             output_dir="output_model",
             instance_prompt="",
             seed=42,
-            resolution=512,
+            resolution=resolution,
             mixed_precision="fp16",
             train_batch_size=1,
             gradient_accumulation_steps=1,
@@ -192,6 +196,8 @@ def train(*inputs):
             lr_scheduler="polynomial",
             lr_warmup_steps = 0,
             max_train_steps=Training_Steps,     
+            gradient_checkpointing=gradient_checkpointing,
+            cache_latents=cache_latents,
         )
         print("Starting single training...")
         lock_file = open("intraining.lock", "w")
@@ -211,7 +217,7 @@ def train(*inputs):
             prior_loss_weight=1.0,
             instance_prompt="",
             seed=42,
-            resolution=512,
+            resolution=resolution,
             mixed_precision="fp16",
             train_batch_size=1,
             gradient_accumulation_steps=1,
@@ -220,7 +226,9 @@ def train(*inputs):
             lr_scheduler="polynomial",
             lr_warmup_steps = 0,
             max_train_steps=Training_Steps,
-            num_class_images=200,
+            num_class_images=200,     
+            gradient_checkpointing=gradient_checkpointing,
+            cache_latents=cache_latents,
         )
         print("Starting multi-training...")
         lock_file = open("intraining.lock", "w")
