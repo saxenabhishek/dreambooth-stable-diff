@@ -76,7 +76,7 @@ def count_files(*inputs):
                 file_counter+=len(files)
     uses_custom = inputs[-1] 
     type_of_thing = inputs[-4]
-    seletected_model = inputs[-5]
+    selected_model = inputs[-5]
     experimental_faces = inputs[-6]
     if(uses_custom):
         Training_Steps = int(inputs[-3])
@@ -98,7 +98,7 @@ def count_files(*inputs):
         elif(selected_model == "v2-768"):
             its = 0.5
         summary_sentence = f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. The training should take around {round(Training_Steps/its, 2)} seconds, or {round((Training_Steps/its)/60, 2)} minutes.
-            The setup, compression and uploading the model can take up to 20 minutes.<br>As the T4-Small GPU costs US$0.60 for 1h, <span style="font-size: 120%"><b>the estimated cost for this training is US${round((((Training_Steps/its)/3600)+0.3+0.1)*0.60, 2)}.</b></span><br><br>
+            The setup, compression and uploading the model can take up to 20 minutes.<br>As the T4-Small GPU costs US$0.60 for 1h, <span style="font-size: 120%"><b>the estimated cost for this training is below US${round((((Training_Steps/its)/3600)+0.3+0.1)*0.60, 2)}.</b></span><br><br>
             If you check the box below the GPU attribution will automatically removed after training is done and the model is uploaded. If not, don't forget to come back here and swap the hardware back to CPU.<br><br>'''
     else:
         summary_sentence = f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps.<br><br>'''
@@ -572,9 +572,10 @@ with gr.Blocks(css=css) as demo:
         #file.change(fn=update_steps,inputs=file_collection, outputs=steps)
         file.change(fn=count_files, inputs=file_collection+[thing_experimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     
+    thing_experimental.change(fn=count_files, inputs=file_collection+[thing_experimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     base_model_to_use.change(fn=count_files, inputs=file_collection+[thing_experimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     steps.change(fn=count_files, inputs=file_collection+[thing_experimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
-    perc_txt_encoder.change(fn=count_files, inputs=file_collection+[thing_exprerimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
+    perc_txt_encoder.change(fn=count_files, inputs=file_collection+[thing_experimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     
     #Give more options if the user wants to finish everything after training
     if(is_spaces):
