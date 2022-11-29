@@ -534,7 +534,7 @@ with gr.Blocks(css=css) as demo:
         perc_txt_encoder = gr.Number(label="Percentage of the training steps the text-encoder should be trained as well", value=30)
         
     with gr.Box(visible=False) as training_summary:
-        training_summary_text = gr.HTML("", visible=False, label="Training Summary")
+        training_summary_text = gr.HTML("", visible=True, label="Training Summary")
         is_advanced_visible = True if is_spaces else False
         training_summary_checkbox = gr.Checkbox(label="Automatically remove paid GPU attribution and upload model to the Hugging Face Hub after training", value=False, visible=is_advanced_visible)
         training_summary_model_name = gr.Textbox(label="Name of your model", visible=False)
