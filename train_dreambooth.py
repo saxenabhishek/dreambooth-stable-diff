@@ -663,8 +663,8 @@ def run_training(args_imported):
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=1, collate_fn=lambda x: x, shuffle=True)
 
         del vae
-        if not args.train_text_encoder:
-            del text_encoder
+        #if not args.train_text_encoder:
+        #    del text_encoder
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
