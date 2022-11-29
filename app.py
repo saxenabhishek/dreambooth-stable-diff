@@ -46,16 +46,16 @@ def swap_text(option, base):
     if(option == "object"):
         instance_prompt_example = "cttoy"
         freeze_for = 30
-        return [f"You are going to train `object`(s), upload 5-10 images of each object you are planning on training on from different angles/perspectives. You can use services like <a style='text-decoration: underline' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. {mandatory_liability}:", '''<img src="file/cat-toy.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}.", freeze_for, gr.update(visible=False)]
+        return [f"You are going to train `object`(s), upload 5-10 images of each object you are planning on training on from different angles/perspectives. You can use services like <a style='text-decoration: underline' target='_blank' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. {mandatory_liability}:", '''<img src="file/cat-toy.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}.", freeze_for, gr.update(visible=False)]
     elif(option == "person"):
        instance_prompt_example = "julcto"
        freeze_for = 70
        show_prior_preservation = True if base != "v2-768" else False
-       return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. You can use services like <a style='text-decoration: underline' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}.", freeze_for, gr.update(visible=True)]
+       return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. You can use services like <a style='text-decoration: underline' target='_blank' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}.", freeze_for, gr.update(visible=True)]
     elif(option == "style"):
         instance_prompt_example = "trsldamrl"
         freeze_for = 10
-        return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. You can use services like <a style='text-decoration: underline' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}", freeze_for, gr.update(visible=False)]
+        return [f"You are going to train a `style`, upload 10-20 images of the style you are planning on training on. You can use services like <a style='text-decoration: underline' target='_blank' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. Name the files with the words you would like  {mandatory_liability}:", '''<img src="file/trsl_style.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}", freeze_for, gr.update(visible=False)]
 
 def swap_base_model(selected_model):
     if(not is_shared_ui or not is_gpu_associated):
@@ -399,7 +399,7 @@ def check_status(top_description):
             update_top_tag = gr.update(value=f'''
             <div class="gr-prose" style="max-width: 80%">
                 <h2>Your model has finished training ✅</h2>
-                <p>Yay, congratulations on training your model. Scroll down to play with with it, save it (either downloading it or on the Hugging Face Hub). Once you are done, your model is safe, and you don't want to train a new one, go to the <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}">settings page</a> and downgrade your Space to a CPU Basic</p> 
+                <p>Yay, congratulations on training your model. Scroll down to play with with it, save it (either downloading it or on the Hugging Face Hub). Once you are done, your model is safe, and you don't want to train a new one, go to the <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}" target="_blank">settings page</a> and downgrade your Space to a CPU Basic</p> 
             </div>
             ''')
         else:
@@ -442,7 +442,7 @@ with gr.Blocks(css=css) as demo:
             top_description = gr.HTML(f'''
                 <div class="gr-prose" style="max-width: 80%">
                 <h2>Attention - This Space doesn't work in this shared UI</h2>
-                <p>For it to work, you can either run locally or duplicate the Space and run it on your own profile using a (paid) private T4 GPU for training. As each T4 costs US$0.60/h, it should cost < US$1 to train most models using default settings!&nbsp;&nbsp;<a class="duplicate-button" style="display:inline-block" href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}?duplicate=true"><img src="https://img.shields.io/badge/-Duplicate%20Space-blue?labelColor=white&style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAP5JREFUOE+lk7FqAkEURY+ltunEgFXS2sZGIbXfEPdLlnxJyDdYB62sbbUKpLbVNhyYFzbrrA74YJlh9r079973psed0cvUD4A+4HoCjsA85X0Dfn/RBLBgBDxnQPfAEJgBY+A9gALA4tcbamSzS4xq4FOQAJgCDwV2CPKV8tZAJcAjMMkUe1vX+U+SMhfAJEHasQIWmXNN3abzDwHUrgcRGmYcgKe0bxrblHEB4E/pndMazNpSZGcsZdBlYJcEL9Afo75molJyM2FxmPgmgPqlWNLGfwZGG6UiyEvLzHYDmoPkDDiNm9JR9uboiONcBXrpY1qmgs21x1QwyZcpvxt9NS09PlsPAAAAAElFTkSuQmCC&logoWidth=14" alt="Duplicate Space"></a></p>
+                <p>For it to work, you can either run locally or duplicate the Space and run it on your own profile using a (paid) private T4 GPU for training. As each T4 costs US$0.60/h, it should cost < US$1 to train most models using default settings!&nbsp;&nbsp;<a class="duplicate-button" style="display:inline-block" target="_blank" href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}?duplicate=true"><img src="https://img.shields.io/badge/-Duplicate%20Space-blue?labelColor=white&style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAP5JREFUOE+lk7FqAkEURY+ltunEgFXS2sZGIbXfEPdLlnxJyDdYB62sbbUKpLbVNhyYFzbrrA74YJlh9r079973psed0cvUD4A+4HoCjsA85X0Dfn/RBLBgBDxnQPfAEJgBY+A9gALA4tcbamSzS4xq4FOQAJgCDwV2CPKV8tZAJcAjMMkUe1vX+U+SMhfAJEHasQIWmXNN3abzDwHUrgcRGmYcgKe0bxrblHEB4E/pndMazNpSZGcsZdBlYJcEL9Afo75molJyM2FxmPgmgPqlWNLGfwZGG6UiyEvLzHYDmoPkDDiNm9JR9uboiONcBXrpY1qmgs21x1QwyZcpvxt9NS09PlsPAAAAAElFTkSuQmCC&logoWidth=14" alt="Duplicate Space"></a></p>
                 <img class="instruction" src="file/duplicate.png"> 
                 <img class="arrow" src="file/arrow.png" />
                 </div>
@@ -459,7 +459,7 @@ with gr.Blocks(css=css) as demo:
                 top_description = gr.HTML(f'''
                         <div class="gr-prose" style="max-width: 80%">
                         <h2>You have successfully duplicated the Dreambooth Training Space 🎉</h2>
-                        <p>There's only one step left before you can train your model: <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}/settings" style="text-decoration: underline">attribute a <b>T4 GPU</b> to it (via the Settings tab)</a> and run the training below. Other GPUs are not compatible for now. You will be billed by the minute from when you activate the GPU until when it is turned it off.</p> 
+                        <p>There's only one step left before you can train your model: <a href="https://huggingface.co/spaces/{os.environ['SPACE_ID']}/settings" style="text-decoration: underline" target="_blank">attribute a <b>T4 GPU</b> to it (via the Settings tab)</a> and run the training below. Other GPUs are not compatible for now. You will be billed by the minute from when you activate the GPU until when it is turned it off.</p> 
                         </div>
                 ''')
         else:
