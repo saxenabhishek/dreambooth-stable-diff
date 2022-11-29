@@ -571,7 +571,8 @@ with gr.Blocks(css=css) as demo:
     for file in file_collection:
         #file.change(fn=update_steps,inputs=file_collection, outputs=steps)
         file.change(fn=count_files, inputs=file_collection+[thing_experimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
-        
+    
+    base_model_to_use.change(fn=count_files, inputs=file_collection+[thing_experimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     steps.change(fn=count_files, inputs=file_collection+[thing_experimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     perc_txt_encoder.change(fn=count_files, inputs=file_collection+[thing_exprerimental]+[base_model_to_use]+[type_of_thing]+[steps]+[perc_txt_encoder]+[swap_auto_calculated], outputs=[training_summary, training_summary_text], queue=False)
     
