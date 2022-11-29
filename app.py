@@ -130,7 +130,8 @@ def pad_image(image):
 def train(*inputs):
     if is_shared_ui:
         raise gr.Error("This Space only works in duplicated instances")
-    
+    if not is_gpu_associated:
+        raise gr.Error("Please associate a T4 GPU for this Space")
     torch.cuda.empty_cache()
     if 'pipe' in globals():
         global pipe, pipe_is_set
@@ -545,6 +546,8 @@ with gr.Blocks(css=css) as demo:
     train_btn = gr.Button("Start Training")
     if(is_shared_ui):
         training_ongoing = gr.Markdown("## This Space only works in duplicated instances. Please duplicate it and try again!", visible=False)
+    elif(not is_gpu_associated):
+        training_ongoing = gr.Markdown("## Oops, you haven't associated your T4 GPU to this Space. Visit the Settings tab, associate and try again.", visible=False)
     else:
         training_ongoing = gr.Markdown("## Training is ongoing ⌛... You can close this tab if you like or just wait. If you did not check the `Remove GPU After training`, you can come back here to try your model and upload it after training. Don't forget to remove the GPU attribution after you are done. ", visible=False)
     
