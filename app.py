@@ -89,7 +89,7 @@ def count_files(*inputs):
         elif(Training_Steps < 1400):
             Training_Steps=1400
     if(is_spaces):
-        if(seletected_model == "v1-5"):
+        if(selected_model == "v1-5"):
             its = 1.1
             if(experimental_faces):
                 its = 1
