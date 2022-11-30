@@ -580,6 +580,7 @@ with gr.Blocks(css=css) as demo:
     type_of_thing.change(fn=swap_text, inputs=[type_of_thing, base_model_to_use], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder, thing_experimental], queue=False, show_progress=False)
     
     #Swap the base model
+    base_model_to_use.change(fn=swap_text, inputs=[type_of_thing, base_model_to_use], outputs=[thing_description, thing_image_example, things_naming, perc_txt_encoder, thing_experimental], queue=False, show_progress=False)
     base_model_to_use.change(fn=swap_base_model, inputs=base_model_to_use, outputs=[])
 
     #Update the summary box below the UI according to how many images are uploaded and whether users are using custom settings or not 
