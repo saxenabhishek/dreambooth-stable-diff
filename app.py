@@ -50,8 +50,9 @@ def swap_text(option, base):
     elif(option == "person"):
        instance_prompt_example = "julcto"
        freeze_for = 70
-       show_prior_preservation = True if base != "v2-768" else False
-       if(show_prior_preservation):
+       #show_prior_preservation = True if base != "v2-768" else False
+       show_prior_preservation=False
+        if(show_prior_preservation):
            prior_preservation_box_update = gr.update(visible=show_prior_preservation)
        else: 
            prior_preservation_box_update = gr.update(visible=show_prior_preservation, value=False)
@@ -183,7 +184,7 @@ def train(*inputs):
             Train_text_encoder_for=15
             
         elif(type_of_thing == "person"):
-            Train_text_encoder_for=75
+            Train_text_encoder_for=70
         
         Training_Steps = file_counter*150
         if(type_of_thing == "person" and Training_Steps > 2600):
