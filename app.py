@@ -189,7 +189,7 @@ def train(*inputs):
         if(type_of_thing == "person" and Training_Steps > 2600):
             Training_Steps = 2600 #Avoid overfitting on people's faces
     stptxt = int((Training_Steps*Train_text_encoder_for)/100)
-    gradient_checkpointing = True
+    gradient_checkpointing = True if (experimental_face_improvement or which_model != "v1-5") else False 
     cache_latents = True if which_model != "v1-5" else False
     if (type_of_thing == "object" or type_of_thing == "style" or (type_of_thing == "person" and not experimental_face_improvement)):
         args_general = argparse.Namespace(
