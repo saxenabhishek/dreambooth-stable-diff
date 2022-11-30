@@ -51,7 +51,11 @@ def swap_text(option, base):
        instance_prompt_example = "julcto"
        freeze_for = 70
        show_prior_preservation = True if base != "v2-768" else False
-       return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. You can use services like <a style='text-decoration: underline' target='_blank' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}.", freeze_for, gr.update(visible=show_prior_preservation)]
+       if(show_prior_preservation):
+           prior_preservation_box_update = gr.update(visible=show_prior_preservation)
+       else:
+           prior_preservation_box_update = gr.update(visible=show_prior_preservation, value=False)
+       return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. You can use services like <a style='text-decoration: underline' target='_blank' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}.", freeze_for, prior_preservation_box_update]
     elif(option == "style"):
         instance_prompt_example = "trsldamrl"
         freeze_for = 10
