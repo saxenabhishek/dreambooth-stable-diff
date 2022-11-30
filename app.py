@@ -52,7 +52,7 @@ def swap_text(option, base):
        freeze_for = 70
        #show_prior_preservation = True if base != "v2-768" else False
        show_prior_preservation=False
-        if(show_prior_preservation):
+       if(show_prior_preservation):
            prior_preservation_box_update = gr.update(visible=show_prior_preservation)
        else: 
            prior_preservation_box_update = gr.update(visible=show_prior_preservation, value=False)
