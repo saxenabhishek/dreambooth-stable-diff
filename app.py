@@ -50,8 +50,11 @@ def swap_text(option, base):
     elif(option == "person"):
        instance_prompt_example = "julcto"
        freeze_for = 70
-       show_prior_preservation = False
-       prior_preservation_box_update = gr.update(visible=show_prior_preservation)
+       show_prior_preservation = True if base != "v2-768" else False
+       if(show_prior_preservation):
+           prior_preservation_box_update = gr.update(visible=show_prior_preservation)
+       else: 
+           prior_preservation_box_update = gr.update(visible=show_prior_preservation, value=False)
        return [f"You are going to train a `person`(s), upload 10-20 images of each person you are planning on training on from different angles/perspectives. You can use services like <a style='text-decoration: underline' target='_blank' href='https://www.birme.net/?target_width={resize_width}&target_height={resize_width}'>birme</a> for smart cropping. {mandatory_liability}:", '''<img src="file/person.png" />''', f"You should name your concept with a unique made up word that has low chance of the model already knowing it (e.g.: `{instance_prompt_example}` here). Images will be automatically cropped to {resize_width}x{resize_width}.", freeze_for, prior_preservation_box_update]
     elif(option == "style"):
         instance_prompt_example = "trsldamrl"
@@ -85,6 +88,8 @@ def count_files(*inputs):
         Training_Steps = int(inputs[-3])
     else:
         Training_Steps = file_counter*150
+        if(type_of_thing == "person" and Training_Steps > 2400):
+            Training_Steps = 2400 #Avoid overfitting on person faces
     if(is_spaces):
         if(selected_model == "v1-5"):
             its = 1.1
@@ -181,9 +186,10 @@ def train(*inputs):
             Train_text_encoder_for=75
         
         Training_Steps = file_counter*150
-
+        if(type_of_thing == "person" and Training_Steps > 2600):
+            Training_Steps = 2600 #Avoid overfitting on people's faces
     stptxt = int((Training_Steps*Train_text_encoder_for)/100)
-    gradient_checkpointing = False if which_model == "v1-5" else True
+    gradient_checkpointing = True
     cache_latents = True if which_model != "v1-5" else False
     if (type_of_thing == "object" or type_of_thing == "style" or (type_of_thing == "person" and not experimental_face_improvement)):
         args_general = argparse.Namespace(
