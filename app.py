@@ -332,6 +332,8 @@ def push(model_name, where_to_upload, hf_token, which_model, comes_from_automate
 license: creativeml-openrail-m
 tags:
 - text-to-image
+widget:
+- text: {instance_prompt_list[0]}
 ---
 ### {model_name} Dreambooth model trained by {api.whoami(token=hf_token)["name"]} with [Hugging Face Dreambooth Training Space](https://huggingface.co/spaces/multimodalart/dreambooth-training) with the {which_model} base model
 
