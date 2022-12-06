@@ -14,7 +14,7 @@ import tarfile
 import urllib.parse
 import gc
 from diffusers import StableDiffusionPipeline
-from huggingface_hub import snapshot_download
+from huggingface_hub import snapshot_download, update_repo_visibility, HfApi
 
 
 is_spaces = True if "SPACE_ID" in os.environ else False
@@ -130,11 +130,33 @@ def pad_image(image):
         new_image.paste(image, ((h - w) // 2, 0))
         return new_image
 
+def validate_model_upload(hf_token, model_name):
+    if(hf_token != ''):
+        api = HfApi()
+        try:
+            _ = api.whoami(hf_token)
+        except:
+            raise gr.Error("You have inserted an invalid Hugging Face token")
+        try:
+            update_repo_visibility(repo_id=os.environ['SPACE_ID'], private=True, token=hf_token, repo_type="space")
+        except:
+            raise gr.Error("Oops, you created a Hugging Face token with read permissions only. You need one with write permissions")
+    else:
+        raise gr.Error("Please insert a Hugging Face Token (make sure to create it with write permissions)")        
+    if(model_name == ""):
+        raise gr.Error("Please fill in your model's name")
+
 def train(*inputs):
     if is_shared_ui:
         raise gr.Error("This Space only works in duplicated instances")
     if not is_gpu_associated:
         raise gr.Error("Please associate a T4 GPU for this Space")
+    hf_token = inputs[-5]
+    model_name = inputs[-7]
+    remove_attribution_after = inputs[-6]
+    if(remove_attribution_after):
+        validate_model_upload(hf_token, model_name)
+    
     torch.cuda.empty_cache()
     if 'pipe' in globals():
         global pipe, pipe_is_set
@@ -170,7 +192,6 @@ def train(*inputs):
     os.makedirs('output_model',exist_ok=True)
     uses_custom = inputs[-1] 
     type_of_thing = inputs[-4]
-    remove_attribution_after = inputs[-6]
     experimental_face_improvement = inputs[-9]
     
     if(uses_custom):
@@ -276,8 +297,6 @@ def train(*inputs):
             gr.update(visible=True) #completed_training
         ]
     else:
-        hf_token = inputs[-5]
-        model_name = inputs[-7]
         where_to_upload = inputs[-8]
         push(model_name, where_to_upload, hf_token, which_model, True)
         hardware_url = f"https://huggingface.co/spaces/{os.environ['SPACE_ID']}/hardware"
@@ -300,6 +319,7 @@ def generate(prompt, steps):
     return(image)
     
 def push(model_name, where_to_upload, hf_token, which_model, comes_from_automated=False):
+    validate_model_upload(hf_token, model_name)
     if(not os.path.exists("model.ckpt")):
         convert("output_model", "model.ckpt")
     from huggingface_hub import HfApi, HfFolder, CommitOperationAdd
@@ -313,7 +333,8 @@ def push(model_name, where_to_upload, hf_token, which_model, comes_from_automate
         model_id = f"sd-dreambooth-library/{model_name_slug}"
         headers = {"Authorization" : f"Bearer: {hf_token}", "Content-Type": "application/json"}
         response = requests.post("https://huggingface.co/organizations/sd-dreambooth-library/share/SSeOwppVCscfTEzFGQaqpfcjukVeNrKNHX", headers=headers)
-    
+
+    print(f"Starting to upload the model {model_id}...")
     images_upload = os.listdir("instance_images")
     image_string = ""
     instance_prompt_list = []
@@ -384,7 +405,7 @@ Sample pictures of:
         else:
             extra_message = "The GPU has been removed automatically as requested, and you can try the model via the model page"
         api.create_discussion(repo_id=os.environ['SPACE_ID'], title=f"Your model {model_name} has finished trained from the Dreambooth Train Spaces!", description=f"Your model has been successfully uploaded to: https://huggingface.co/{model_id}. {extra_message}",repo_type="space", token=hf_token)
-
+    print("Model uploaded successfully!")
     return [gr.update(visible=True, value=f"Successfully uploaded your model. Access it [here](https://huggingface.co/{model_id})"), gr.update(visible=True, value=["diffusers_model.tar", "model.ckpt"])]
 
 def convert_to_ckpt():
