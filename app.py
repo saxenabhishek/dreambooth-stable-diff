@@ -32,8 +32,8 @@ maximum_concepts = 3
 #Pre download the files
 if(is_gpu_associated):
     model_v1 = snapshot_download(repo_id="multimodalart/sd-fine-tunable")
-    model_v2 = snapshot_download(repo_id="stabilityai/stable-diffusion-2")
-    model_v2_512 = snapshot_download(repo_id="stabilityai/stable-diffusion-2-base")
+    model_v2 = snapshot_download(repo_id="stabilityai/stable-diffusion-2-1")
+    model_v2_512 = snapshot_download(repo_id="stabilityai/stable-diffusion-2-1-base")
     safety_checker = snapshot_download(repo_id="multimodalart/sd-sc")
     model_to_load = model_v1
 
@@ -41,7 +41,7 @@ with zipfile.ZipFile("mix.zip", 'r') as zip_ref:
     zip_ref.extractall(".")
 
 def swap_text(option, base):
-    resize_width = 768 if base == "v2-768" else 512
+    resize_width = 768 if base == "v2-1-768" else 512
     mandatory_liability = "You must have the right to do so and you are liable for the images you use, example:"
     if(option == "object"):
         instance_prompt_example = "cttoy"
@@ -50,7 +50,7 @@ def swap_text(option, base):
     elif(option == "person"):
        instance_prompt_example = "julcto"
        freeze_for = 70
-       #show_prior_preservation = True if base != "v2-768" else False
+       #show_prior_preservation = True if base != "v2-1-768" else False
        show_prior_preservation=False
        if(show_prior_preservation):
            prior_preservation_box_update = gr.update(visible=show_prior_preservation)
@@ -67,7 +67,7 @@ def swap_base_model(selected_model):
         global model_to_load
         if(selected_model == "v1-5"):
             model_to_load = model_v1
-        elif(selected_model == "v2-768"):
+        elif(selected_model == "v2-1-768"):
             model_to_load = model_v2
         else:
             model_to_load = model_v2_512
@@ -96,11 +96,11 @@ def count_files(*inputs):
             its = 1.1
             if(experimental_faces):
                 its = 1
-        elif(selected_model == "v2-512"):
+        elif(selected_model == "v2-1-512"):
             its = 0.8
             if(experimental_faces):
                 its = 0.7
-        elif(selected_model == "v2-768"):
+        elif(selected_model == "v2-1-768"):
             its = 0.5
         summary_sentence = f'''You are going to train {concept_counter} {type_of_thing}(s), with {file_counter} images for {Training_Steps} steps. The training should take around {round(Training_Steps/its, 2)} seconds, or {round((Training_Steps/its)/60, 2)} minutes.
             The setup, compression and uploading the model can take up to 20 minutes.<br>As the T4-Small GPU costs US$0.60 for 1h, <span style="font-size: 120%"><b>the estimated cost for this training is below US${round((((Training_Steps/its)/3600)+0.3+0.1)*0.60, 2)}.</b></span><br><br>
@@ -171,7 +171,7 @@ def train(*inputs):
     if os.path.exists("hastrained.success"): os.remove("hastrained.success")
     file_counter = 0
     which_model = inputs[-10]
-    resolution = 512 if which_model != "v2-768" else 768
+    resolution = 512 if which_model != "v2-1-768" else 768
     for i, input in enumerate(inputs):
         if(i < maximum_concepts-1):
             if(input):
@@ -498,7 +498,7 @@ with gr.Blocks(css=css) as demo:
     
     with gr.Row() as what_are_you_training:
         type_of_thing = gr.Dropdown(label="What would you like to train?", choices=["object", "person", "style"], value="object", interactive=True)
-        base_model_to_use = gr.Dropdown(label="Which base model would you like to use?", choices=["v1-5", "v2-512", "v2-768"], value="v1-5", interactive=True)
+        base_model_to_use = gr.Dropdown(label="Which base model would you like to use?", choices=["v1-5", "v2-1-512", "v2-1-768"], value="v1-5", interactive=True)
     
     #Very hacky approach to emulate dynamically created Gradio components   
     with gr.Row() as upload_your_concept:
