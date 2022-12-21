@@ -15,4 +15,5 @@ bitsandbytes
 python-slugify
 requests
 tensorboard
-pip install git+https://github.com/facebookresearch/xformers@7e4c02c#egg=xformers
+# git+https://github.com/facebookresearch/xformers@7e4c02c#egg=xformers
+Pillow
