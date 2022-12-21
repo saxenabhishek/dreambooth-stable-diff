@@ -5,3 +5,6 @@ __pycache__
 intraining.lock
 hastrained.success
 diffusers_model.tar
+env
+data
+*.msg

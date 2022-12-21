@@ -1,0 +1,8 @@
+*.png
+.git/
+.vscode/
+Mix.zip
+Mix/
+__pycache__/
+env/
+venv/
